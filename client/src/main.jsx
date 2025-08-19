@@ -5,6 +5,7 @@ import App from './App.jsx';
 import HomePage from './HomePage.jsx';
 import ScrapbookPage from './ScrapbookPage.jsx';
 import './index.css';
+import 'prosemirror-view/style/prosemirror.css';
 
 // Define the application's routes
 const router = createBrowserRouter([

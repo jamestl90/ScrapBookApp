@@ -54,3 +54,45 @@
 .read-the-docs {
   color: #888;
 }
+
+.text-editor-container {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.editor-menu-bar {
+  display: flex;
+  gap: 5px;
+}
+
+.editor-menu-bar button {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #000;
+}
+
+.editor-menu-bar button.is-active {
+  background: #e0e0e0;
+  font-weight: bold;
+}
+
+/* Tiptap's default styling for the content area */
+.ProseMirror {
+  outline: none;
+  min-height: 50px;
+}
+
+.ProseMirror {
+  outline: none;
+  min-height: 50px;
+  color: #000; /* Add this line to make text black by default */
+}

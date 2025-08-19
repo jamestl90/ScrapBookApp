@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tiptap/react": "^3.2.0",
+    "@tiptap/starter-kit": "^3.2.0",
+    "html-to-image": "^1.11.13",
     "konva": "^9.3.22",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
