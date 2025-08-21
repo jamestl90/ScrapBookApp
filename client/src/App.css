@@ -96,3 +96,36 @@
   min-height: 50px;
   color: #000; /* Add this line to make text black by default */
 }
+
+.editor-menu-bar select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  background: #f8f8f8;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #000;
+  font-family: inherit;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0;
+}
+
+.ProseMirror h3 {
+  font-size: 1.25em;
+  font-weight: bold;
+  margin: 0;
+}
+
+.ProseMirror > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}

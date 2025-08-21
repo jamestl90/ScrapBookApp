@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Transformer, Group, Text } from 'react-konva';
-import * as htmlToImage from 'html-to-image';
+import html2canvas from 'html2canvas'; 
 
 import Toolbar from './Toolbar';
 import CanvasImage from './CanvasImage';
@@ -17,13 +17,62 @@ function ScrapbookPage() {
 
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  
-  // --- POSITIONING FIX START: New state for manual popover position ---
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
-  // --- POSITIONING FIX END ---
-
   const trRef = useRef();
   const layerRef = useRef();
+  const popoverRef = useRef(null);
+
+  function inlineTextColors(node) {
+    const allNodes = node.querySelectorAll('*');
+    allNodes.forEach(el => {
+      const cs = window.getComputedStyle(el);
+      if (cs.color) {
+        el.style.color = cs.color;
+      }
+    });
+    // also apply to root node if needed
+    const csRoot = window.getComputedStyle(node);
+    if (csRoot.color) node.style.color = csRoot.color;
+  }
+
+  const handleEditingDone = async () => {
+    if (!editingItem || !popoverRef.current) return;
+
+    const editorNode = popoverRef.current.querySelector('.ProseMirror');
+    const clone = editorNode.cloneNode(true);
+
+    // Trim any trailing empty paragraph tags from the clone.
+    while (
+      clone.lastChild &&
+      (clone.lastChild.textContent.trim() === '' || clone.lastChild.innerHTML === '<br>')
+    ) {
+      clone.removeChild(clone.lastChild);
+    }
+    
+    clone.style.position = 'absolute';
+    clone.style.top = '-9999px';
+    clone.style.left = '-9999px';
+    document.body.appendChild(clone);
+
+    const canvas = await html2canvas(clone, {
+      backgroundColor: null, 
+      logging: false, 
+    });
+    const dataUrl = canvas.toDataURL('image/png');
+    document.body.removeChild(clone);
+
+    const newItems = items.slice();
+    const itemToUpdate = newItems.find(i => i.id === editingItem.id);
+    if (itemToUpdate) {
+      itemToUpdate.image = dataUrl;
+      itemToUpdate.text = '';
+      itemToUpdate.width = canvas.width;
+      itemToUpdate.height = canvas.height;
+    }
+    setItems(newItems);
+    setEditingItem(null);
+    setPopoverPosition({ visible: false });
+  };
 
   useEffect(() => {
     if (selectedId && !editingItem) {
@@ -94,6 +143,20 @@ function ScrapbookPage() {
       setPopoverPosition({ visible: false });
     }
   };
+  
+  const handleTextUpdate = (htmlContent) => {
+    if (!editingItem) return;
+    const newItems = items.slice();
+    const itemToUpdate = newItems.find(i => i.id === editingItem.id);
+    if (itemToUpdate) {
+      itemToUpdate.html = htmlContent;
+      // Convert HTML to plain text for live canvas preview
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = htmlContent;
+      itemToUpdate.text = tempDiv.textContent || tempDiv.innerText || '';
+      setItems(newItems);
+    }
+  };
 
   const addItem = (type) => {
     const newId = `item${idCounter++}`;
@@ -112,22 +175,11 @@ function ScrapbookPage() {
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
       selectShape(null);
+      if (editingItem) {
+        handleEditingDone();
+      }
       setEditingItem(null);
       setPopoverPosition({ visible: false }); // Hide popover
-    }
-  };
-
-  const handleTextUpdate = (htmlContent) => {
-    if (!editingItem) return;
-    const newItems = items.slice();
-    const itemToUpdate = newItems.find(i => i.id === editingItem.id);
-    if (itemToUpdate) {
-      itemToUpdate.html = htmlContent;
-      // Convert HTML to plain text for live canvas preview
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = htmlContent;
-      itemToUpdate.text = tempDiv.textContent || tempDiv.innerText || '';
-      setItems(newItems);
     }
   };
 
@@ -135,7 +187,7 @@ function ScrapbookPage() {
     <>
       <Toolbar onAddItem={addItem} />
       {popoverPosition.visible && (
-        <div style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
+        <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
             content={editingItem.html}
             onUpdate={handleTextUpdate}
@@ -150,6 +202,31 @@ function ScrapbookPage() {
             } else if (item.type === 'image') {
               return <CanvasImage key={item.id} id={item.id} {...item} draggable onDragEnd={handleDragEnd} onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)} />;
             } else if (item.type === 'text') {
+              if (item.image) {
+                return (
+                  <CanvasImage
+                    key={item.id} id={item.id}
+                    src={item.image} x={item.x} y={item.y}
+                    width={item.width} height={item.height}
+                    draggable onDragEnd={handleDragEnd}
+                    onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)}
+                    onDblClick={(e) => { 
+                      const node = e.currentTarget;
+                      const stage = node.getStage();
+                      const stageBox = stage.container().getBoundingClientRect();
+                      const nodeBox = node.getClientRect({ relativeTo: stage });
+
+                      setPopoverPosition({
+                        visible: true,
+                        left: stageBox.left + nodeBox.x,
+                        top: stageBox.top + nodeBox.y + nodeBox.height + 5, // Position below the text
+                      });
+                      setEditingItem(item);
+                      selectShape(null); 
+                    }}
+                  />
+                );
+              }
               return (
                 <Group
                   key={item.id} id={item.id} x={item.x} y={item.y}

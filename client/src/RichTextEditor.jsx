@@ -1,6 +1,9 @@
 import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import { Heading } from '@tiptap/extension-heading'; 
 
 // This is the menu bar that will have buttons for bold, italic, etc.
 const MenuBar = ({ editor }) => {
@@ -10,6 +13,28 @@ const MenuBar = ({ editor }) => {
 
   return (
     <div className="editor-menu-bar">
+      <select
+        onChange={(e) => {
+          const level = parseInt(e.target.value);
+          if (level === 0) {
+            // 0 will represent normal paragraph text
+            editor.chain().focus().setParagraph().run();
+          } else {
+            editor.chain().focus().toggleHeading({ level: level }).run();
+          }
+        }}
+        // This value reflects the currently selected heading level
+        value={
+          editor.isActive('heading', { level: 1 }) ? 1 :
+          editor.isActive('heading', { level: 2 }) ? 2 :
+          editor.isActive('heading', { level: 3 }) ? 3 : 0
+        }
+      >
+        <option value="0">Normal</option>
+        <option value="1">H1</option>
+        <option value="2">H2</option>
+        <option value="3">H3</option>
+      </select>
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         disabled={!editor.can().chain().focus().toggleBold().run()}
@@ -24,6 +49,11 @@ const MenuBar = ({ editor }) => {
       >
         Italic
       </button>
+      <input
+        type="color"
+        onInput={event => editor.chain().focus().setColor(event.target.value).run()}
+        data-testid="setColor"
+      />
     </div>
   );
 };
@@ -32,11 +62,15 @@ const MenuBar = ({ editor }) => {
 const RichTextEditor = ({ content, onUpdate }) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ heading: false, }),
+      TextStyle, // Add TextStyle
+      Color.configure({ types: ['textStyle'] }),
+      Heading.configure({
+        levels: [1, 2, 3],
+      }),
     ],
     content: content, // The initial text to load
     onUpdate: ({ editor }) => {
-      // When the content changes, call the onUpdate function from the parent
       onUpdate(editor.getHTML());
     },
   });
