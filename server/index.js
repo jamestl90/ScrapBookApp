@@ -78,6 +78,29 @@ app.get('/api/load/:id', (req, res) => {
   });
 });
 
+app.get('/api/scrapbooks', (req, res) => {
+  const dataPath = path.join(__dirname, 'data');
+
+  // Read the contents of the 'data' directory
+  fs.readdir(dataPath, (err, files) => {
+    if (err) {
+      // If the directory doesn't exist, return an empty list.
+      if (err.code === 'ENOENT') {
+        return res.status(200).json([]);
+      }
+      console.error('Error reading data directory:', err);
+      return res.status(500).json({ message: 'Failed to retrieve scrapbooks.' });
+    }
+
+    // Filter out any non-JSON files and remove the '.json' extension
+    const scrapbookIds = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => file.replace('.json', ''));
+      
+    res.status(200).json(scrapbookIds);
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
