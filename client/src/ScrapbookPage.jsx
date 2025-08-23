@@ -138,7 +138,9 @@ function ScrapbookPage() {
       .then((data) => {
         if (data.filePath) {
           const newId = `item${idCounter++}`;
-          const newItem = { type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, };
+          const newItem = { type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, rotation: 0,
+            scaleX: 1,
+            scaleY: 1,};
           setItems((prevItems) => [...prevItems, newItem]);
         }
       })
@@ -190,14 +192,36 @@ function ScrapbookPage() {
     }
   };
 
+  const handleTransformEnd = (e) => {
+    const node = e.target;
+    const id = node.id();
+    const newItems = items.slice();
+    const itemToUpdate = newItems.find((i) => i.id === id);
+
+    if (itemToUpdate) {
+      itemToUpdate.x = node.x();
+      itemToUpdate.y = node.y();
+      itemToUpdate.rotation = node.rotation();
+      itemToUpdate.scaleX = node.scaleX();
+      itemToUpdate.scaleY = node.scaleY();
+    }
+    
+    setItems(newItems);
+  };
+
   const addItem = (type) => {
     const newId = `item${idCounter++}`;
     if (type === 'text') {
       const newItem = {
         type: 'text', x: 50, y: 50, id: newId,
-        html: '<p>Double click to edit</p>', text: 'Double click to edit',
+        html: '<p style="color: #ffffff">Double click to edit</p>',
+        text: 'Double click to edit',
         fill: '#000', fontSize: 24,
         image: null, width: 200, height: 50,
+        //backgroundColor: '#333333',
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
       };
       setItems([...items, newItem]);
     }
@@ -292,7 +316,9 @@ function ScrapbookPage() {
             }
             return null;
           })}
-          <Transformer ref={trRef} boundBoxFunc={(oldBox, newBox) => { if (newBox.width < 5 || newBox.height < 5) { return oldBox; } return newBox; }} />
+          <Transformer ref={trRef} boundBoxFunc={(oldBox, newBox) => 
+            { if (newBox.width < 5 || newBox.height < 5) { return oldBox; } return newBox; }
+          } onTransformEnd={handleTransformEnd} />
         </Layer>
       </Stage>
     </>
