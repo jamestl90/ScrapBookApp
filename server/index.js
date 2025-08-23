@@ -41,42 +41,39 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   res.json({ filePath: `/uploads/${req.file.filename}` });
 });
 
-app.post('/api/save', (req, res) => {
-  const data = req.body; // The `items` array from the client
-  const filePath = path.join(__dirname, 'scrapbook-data.json'); // Define where to save the file
+app.post('/api/save/:id', (req, res) => {
+  const scrapbookId = req.params.id;
+  const data = req.body;
+  
+  // Sanitize the ID to prevent directory traversal attacks (important!)
+  const safeId = path.basename(scrapbookId);
+  const filePath = path.join(__dirname, 'data', `${safeId}.json`);
 
-  // Convert the JavaScript object to a JSON string with nice formatting
   const jsonString = JSON.stringify(data, null, 2);
 
-  // Write the string to the file
   fs.writeFile(filePath, jsonString, (err) => {
     if (err) {
       console.error('Error saving data:', err);
-      // Send an error response back to the client
       return res.status(500).json({ message: 'Failed to save scrapbook.' });
     }
-    console.log('Scrapbook data saved successfully!');
-    // Send a success response back to the client
+    console.log(`Scrapbook [${safeId}] saved successfully!`);
     res.status(200).json({ message: 'Scrapbook saved successfully!' });
   });
 });
 
-app.get('/api/load', (req, res) => {
-  const filePath = path.join(__dirname, 'scrapbook-data.json');
+app.get('/api/load/:id', (req, res) => {
+  const scrapbookId = req.params.id;
+  const safeId = path.basename(scrapbookId);
+  const filePath = path.join(__dirname, 'data', `${safeId}.json`);
 
-  // Read the file from the disk
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
-      // If the file doesn't exist yet, it's not a critical error.
-      // We can send back an empty array, which means a new scrapbook.
       if (err.code === 'ENOENT') {
         return res.status(200).json([]);
       }
       console.error('Error loading data:', err);
       return res.status(500).json({ message: 'Failed to load scrapbook.' });
     }
-    
-    // Parse the JSON string back into a JavaScript object and send it
     res.status(200).json(JSON.parse(data));
   });
 });

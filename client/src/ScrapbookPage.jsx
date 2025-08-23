@@ -1,3 +1,4 @@
+import { useParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Transformer, Group, Text } from 'react-konva';
 import html2canvas from 'html2canvas'; 
@@ -9,8 +10,8 @@ import RichTextEditor from './RichTextEditor';
 let idCounter = 2;
 
 function ScrapbookPage() {
+  const { scrapbookId } = useParams();
   const [items, setItems] = useState([]);
-
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
@@ -19,27 +20,25 @@ function ScrapbookPage() {
   const popoverRef = useRef(null);
 
   const handleSave = () => {
-    console.log("Saving scrapbook data:", items);
+    console.log(`Saving scrapbook data for [${scrapbookId}]:`, items);
 
-    fetch('/api/save', {
+    fetch(`/api/save/${scrapbookId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(items), 
+      headers: { 'Content-Type': 'application/json', },
+      body: JSON.stringify(items),
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Server response:', data.message);
-        // We can add a user notification here later (e.g. "Saved!" toast message)
-      })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+    .then(response => response.json())
+    .then(data => {
+      console.log('Server response:', data.message);
+      // We can add a user notification here later (e.g. "Saved!" toast message)
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+    });
   };
 
   useEffect(() => {
-    fetch('/api/load')
+    fetch(`/api/load/${scrapbookId}`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -51,7 +50,7 @@ function ScrapbookPage() {
         }
       })
       .catch(err => console.error("Failed to load scrapbook data:", err));
-  }, []);
+  }, [scrapbookId]);
 
   const handleEditingDone = async () => {
     if (!editingItem || !popoverRef.current) return;
