@@ -14,8 +14,8 @@
   },
   {
     "type": "text",
-    "x": 403,
-    "y": 406,
+    "x": 809,
+    "y": 413,
     "id": "item3",
     "html": "<p><span style=\"color: rgb(255, 0, 0);\"><strong><em>Douasdfa</em></strong></span></p>",
     "text": "",
@@ -38,5 +38,14 @@
     "image": null,
     "width": 200,
     "height": 50
+  },
+  {
+    "type": "image",
+    "x": 322.99999999999875,
+    "y": 500.99999999999244,
+    "width": 200,
+    "height": 200,
+    "src": "/uploads/image-1755925818575-472436749.png",
+    "id": "item5"
   }
 ]

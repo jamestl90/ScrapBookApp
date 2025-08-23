@@ -217,7 +217,7 @@ function ScrapbookPage() {
 
   return (
     <>
-      <Toolbar onAddItem={addItem} onSave={handleSave} />
+      <Toolbar onAddItem={addItem} onSave={handleSave} onFileSelect={uploadImage} />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
