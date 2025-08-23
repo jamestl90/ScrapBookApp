@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs'); 
 const app = express();
 const port = process.env.PORT || 3001;
 
@@ -9,6 +10,7 @@ const port = process.env.PORT || 3001;
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 // --- Multer Storage Configuration ---
 const storage = multer.diskStorage({
@@ -37,6 +39,46 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
   // Return the path to the uploaded file
   // The path will be relative to the 'public' directory, e.g., '/uploads/image-12345.png'
   res.json({ filePath: `/uploads/${req.file.filename}` });
+});
+
+app.post('/api/save', (req, res) => {
+  const data = req.body; // The `items` array from the client
+  const filePath = path.join(__dirname, 'scrapbook-data.json'); // Define where to save the file
+
+  // Convert the JavaScript object to a JSON string with nice formatting
+  const jsonString = JSON.stringify(data, null, 2);
+
+  // Write the string to the file
+  fs.writeFile(filePath, jsonString, (err) => {
+    if (err) {
+      console.error('Error saving data:', err);
+      // Send an error response back to the client
+      return res.status(500).json({ message: 'Failed to save scrapbook.' });
+    }
+    console.log('Scrapbook data saved successfully!');
+    // Send a success response back to the client
+    res.status(200).json({ message: 'Scrapbook saved successfully!' });
+  });
+});
+
+app.get('/api/load', (req, res) => {
+  const filePath = path.join(__dirname, 'scrapbook-data.json');
+
+  // Read the file from the disk
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) {
+      // If the file doesn't exist yet, it's not a critical error.
+      // We can send back an empty array, which means a new scrapbook.
+      if (err.code === 'ENOENT') {
+        return res.status(200).json([]);
+      }
+      console.error('Error loading data:', err);
+      return res.status(500).json({ message: 'Failed to load scrapbook.' });
+    }
+    
+    // Parse the JSON string back into a JavaScript object and send it
+    res.status(200).json(JSON.parse(data));
+  });
 });
 
 app.listen(port, () => {

@@ -9,11 +9,7 @@ import RichTextEditor from './RichTextEditor';
 let idCounter = 2;
 
 function ScrapbookPage() {
-  const [items, setItems] = useState([
-    {
-      type: 'rect', x: 20, y: 20, width: 100, height: 100, fill: 'royalblue', id: 'rect1'
-    }
-  ]);
+  const [items, setItems] = useState([]);
 
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -22,24 +18,48 @@ function ScrapbookPage() {
   const layerRef = useRef();
   const popoverRef = useRef(null);
 
-  function inlineTextColors(node) {
-    const allNodes = node.querySelectorAll('*');
-    allNodes.forEach(el => {
-      const cs = window.getComputedStyle(el);
-      if (cs.color) {
-        el.style.color = cs.color;
-      }
-    });
-    // also apply to root node if needed
-    const csRoot = window.getComputedStyle(node);
-    if (csRoot.color) node.style.color = csRoot.color;
-  }
+  const handleSave = () => {
+    console.log("Saving scrapbook data:", items);
+
+    fetch('/api/save', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(items), 
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Server response:', data.message);
+        // We can add a user notification here later (e.g. "Saved!" toast message)
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  };
+
+  useEffect(() => {
+    fetch('/api/load')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setItems(data);
+          // Optional: Update the ID counter to avoid conflicts
+          // This is a simple way to do it for now.
+          const maxId = Math.max(...data.map(item => parseInt(item.id.replace('item', '')) || 0));
+          idCounter = maxId + 1;
+        }
+      })
+      .catch(err => console.error("Failed to load scrapbook data:", err));
+  }, []);
 
   const handleEditingDone = async () => {
     if (!editingItem || !popoverRef.current) return;
 
     const editorNode = popoverRef.current.querySelector('.ProseMirror');
     const clone = editorNode.cloneNode(true);
+
+    const bgColor = editingItem.backgroundColor === 'transparent' ? null : editingItem.backgroundColor;
 
     // Trim any trailing empty paragraph tags from the clone.
     while (
@@ -55,7 +75,7 @@ function ScrapbookPage() {
     document.body.appendChild(clone);
 
     const canvas = await html2canvas(clone, {
-      backgroundColor: null, 
+      backgroundColor: bgColor, 
       logging: false, 
     });
     const dataUrl = canvas.toDataURL('image/png');
@@ -72,6 +92,19 @@ function ScrapbookPage() {
     setItems(newItems);
     setEditingItem(null);
     setPopoverPosition({ visible: false });
+  };
+
+  const handleBgChange = (newColor) => {
+    if (!editingItem) return;
+    
+    setEditingItem(prev => ({ ...prev, backgroundColor: newColor }));
+
+    const newItems = items.slice();
+    const itemToUpdate = newItems.find(i => i.id === editingItem.id);
+    if (itemToUpdate) {
+      itemToUpdate.backgroundColor = newColor;
+      setItems(newItems);
+    }
   };
 
   useEffect(() => {
@@ -185,12 +218,14 @@ function ScrapbookPage() {
 
   return (
     <>
-      <Toolbar onAddItem={addItem} />
+      <Toolbar onAddItem={addItem} onSave={handleSave} />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
             content={editingItem.html}
             onUpdate={handleTextUpdate}
+            bgColor={editingItem.backgroundColor}
+            onBgChange={handleBgChange}
           />
         </div>
       )}

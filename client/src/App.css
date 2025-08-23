@@ -71,6 +71,11 @@
   gap: 5px;
 }
 
+.editor-menu-bar label {
+  color: #000;
+  font-weight: bold;
+}
+
 .editor-menu-bar button {
   padding: 4px 8px;
   border: 1px solid #ddd;
@@ -88,12 +93,7 @@
 /* Tiptap's default styling for the content area */
 .ProseMirror {
   outline: none;
-  min-height: 50px;
-}
-
-.ProseMirror {
-  outline: none;
-  min-height: 50px;
+  min-height: 25px;
   color: #000; /* Add this line to make text black by default */
 }
 
@@ -128,4 +128,11 @@
 .ProseMirror > * {
   margin-top: 0;
   margin-bottom: 0;
+}
+
+/* Add styling for color picker labels */
+.editor-menu-bar label {
+  font-size: 0.8em;
+  align-self: center;
+  margin-left: 5px;
 }
