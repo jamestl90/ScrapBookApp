@@ -258,16 +258,27 @@ function ScrapbookPage() {
             if (item.type === 'rect') {
               return <Rect key={item.id} id={item.id} {...item} draggable onDragEnd={handleDragEnd} onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)} />;
             } else if (item.type === 'image') {
-              return <CanvasImage key={item.id} id={item.id} {...item} draggable onDragEnd={handleDragEnd} onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)} />;
+              return (
+                <CanvasImage 
+                  key={item.id} 
+                  id={item.id} {...item} 
+                  draggable onDragEnd={handleDragEnd} 
+                  onClick={() => selectShape(item.id)} 
+                  onTap={() => selectShape(item.id)} 
+                />
+              );
             } else if (item.type === 'text') {
               if (item.image) {
                 return (
                   <CanvasImage
-                    key={item.id} id={item.id}
-                    src={item.image} x={item.x} y={item.y}
-                    width={item.width} height={item.height}
-                    draggable onDragEnd={handleDragEnd}
-                    onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)}
+                    key={item.id}
+                    id={item.id}
+                    {...item} 
+                    src={item.image} 
+                    draggable
+                    onDragEnd={handleDragEnd}
+                    onClick={() => selectShape(item.id)}
+                    onTap={() => selectShape(item.id)}
                     onDblClick={(e) => { 
                       const node = e.currentTarget;
                       const stage = node.getStage();
@@ -277,7 +288,7 @@ function ScrapbookPage() {
                       setPopoverPosition({
                         visible: true,
                         left: stageBox.left + nodeBox.x,
-                        top: stageBox.top + nodeBox.y + nodeBox.height + 5, // Position below the text
+                        top: stageBox.top + nodeBox.y + nodeBox.height + 5,
                       });
                       setEditingItem(item);
                       selectShape(null); 
