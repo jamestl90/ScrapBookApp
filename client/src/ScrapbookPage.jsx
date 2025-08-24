@@ -6,6 +6,8 @@ import html2canvas from 'html2canvas';
 import Toolbar from './Toolbar';
 import CanvasImage from './CanvasImage';
 import RichTextEditor from './RichTextEditor';
+import AudioRecorder from './AudioRecorder';
+import AudioPlayer from './AudioPlayer';
 
 let idCounter = 2;
 
@@ -15,9 +17,68 @@ function ScrapbookPage() {
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
+  const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
   const trRef = useRef();
   const layerRef = useRef();
   const popoverRef = useRef(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const audioStreamRef = useRef(null);
+
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      audioStreamRef.current = stream;
+      
+      setIsRecording(true);
+      audioChunksRef.current = [];
+
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start();
+
+    } catch (err) {
+      console.error('Error starting audio recording:', err);
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      // Move the logic into the onstop handler
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+
+        console.log('Audio Blob created:', { 
+          size: audioBlob.size, 
+          type: audioBlob.type 
+        });
+
+        const audioFile = new File([audioBlob], `recording-${Date.now()}.webm`, { type: 'audio/webm' });
+        uploadFile(audioFile);
+        
+        // Now that the work is done, update the state
+        setIsRecording(false);
+        setIsAudioPanelOpen(false);
+
+        if (audioStreamRef.current) {
+          audioStreamRef.current.getTracks().forEach(track => track.stop());
+          audioStreamRef.current = null; // Clear the ref
+        }
+      };
+
+      // Just call stop(). The onstop handler will do the rest.
+      mediaRecorderRef.current.stop();
+    }
+  };
 
   const handleSave = () => {
     console.log(`Saving scrapbook data for [${scrapbookId}]:`, items);
@@ -130,18 +191,38 @@ function ScrapbookPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [items, selectedId]);
 
-  const uploadImage = (file) => {
+  const uploadFile = (file) => {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
     fetch('/api/upload', { method: 'POST', body: formData, })
       .then((res) => res.json())
       .then((data) => {
         if (data.filePath) {
           const newId = `item${idCounter++}`;
-          const newItem = { type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, rotation: 0,
-            scaleX: 1,
-            scaleY: 1,};
-          setItems((prevItems) => [...prevItems, newItem]);
+          
+          let newItem;
+          if (file.type.startsWith('image/')) {
+            newItem = { 
+              type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, 
+              rotation: 0, scaleX: 1, scaleY: 1,
+              offsetX: 100, offsetY: 100,
+            };
+          } else if (file.type.startsWith('audio/')) {
+            newItem = {
+              type: 'audio', x: 50, y: 50, id: newId,
+              x: window.innerWidth / 2 - 100, 
+              y: window.innerHeight / 2 - 30,
+              src: data.filePath,
+              text: 'My Recording', // Default editable text
+              width: 200, height: 60, // Default size for the audio player
+              rotation: 0, scaleX: 1, scaleY: 1,
+              offsetX: 100, offsetY: 30,
+            };
+          }
+
+          if (newItem) {
+            setItems((prevItems) => [...prevItems, newItem]);
+          }
         }
       })
       .catch((err) => console.error("Error uploading image:", err));
@@ -154,7 +235,7 @@ function ScrapbookPage() {
       for (const item of items) {
         if (item.type.indexOf('image') !== -1) {
           const file = item.getAsFile();
-          uploadImage(file);
+          uploadFile(file);
           break;
         }
       }
@@ -241,7 +322,8 @@ function ScrapbookPage() {
 
   return (
     <>
-      <Toolbar onAddItem={addItem} onSave={handleSave} onFileSelect={uploadImage} />
+      <Toolbar onAddItem={addItem} onSave={handleSave} 
+      onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
@@ -252,12 +334,29 @@ function ScrapbookPage() {
           />
         </div>
       )}
+      {isAudioPanelOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100
+        }}>
+          <AudioRecorder
+            isRecording={isRecording}
+            onStart={handleStartRecording}
+            onStop={handleStopRecording}
+          />
+        </div>
+      )}
       <Stage width={window.innerWidth} height={window.innerHeight} onMouseDown={checkDeselect} onTouchStart={checkDeselect}>
         <Layer ref={layerRef}>
           {items.map((item) => {
             if (item.type === 'rect') {
               return <Rect key={item.id} id={item.id} {...item} draggable onDragEnd={handleDragEnd} onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)} />;
-            } else if (item.type === 'image') {
+            } 
+            // Image rendering 
+            else if (item.type === 'image') {
               return (
                 <CanvasImage 
                   key={item.id} 
@@ -267,7 +366,9 @@ function ScrapbookPage() {
                   onTap={() => selectShape(item.id)} 
                 />
               );
-            } else if (item.type === 'text') {
+            } 
+            // Text image rendering
+            else if (item.type === 'text') {
               if (item.image) {
                 return (
                   <CanvasImage
@@ -296,6 +397,7 @@ function ScrapbookPage() {
                   />
                 );
               }
+              // Placeholder text rendering 
               return (
                 <Group
                   key={item.id} id={item.id} x={item.x} y={item.y}
@@ -323,6 +425,19 @@ function ScrapbookPage() {
                     padding={5} verticalAlign="middle" listen={false} // Make text non-interactive, group handles events
                   />
                 </Group>
+              );
+            }
+            else if (item.type === 'audio') {
+              return (
+                <AudioPlayer
+                  key={item.id}
+                  id={item.id}
+                  {...item} // Pass all props like x, y, width, height, text, src
+                  draggable
+                  onDragEnd={handleDragEnd}
+                  onClick={() => selectShape(item.id)}
+                  onTap={() => selectShape(item.id)}
+                />
               );
             }
             return null;

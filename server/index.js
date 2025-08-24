@@ -19,8 +19,10 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     // Create a unique filename to avoid overwriting files
+    const originalName = path.parse(file.originalname).name;
+    const extension = path.parse(file.originalname).ext;
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, `${originalName}-${uniqueSuffix}${extension}`);
   }
 });
 
@@ -32,7 +34,7 @@ app.get('/api', (req, res) => {
 });
 
 // File Upload Endpoint
-app.post('/api/upload', upload.single('image'), (req, res) => {
+app.post('/api/upload', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).send('No file uploaded.');
   }

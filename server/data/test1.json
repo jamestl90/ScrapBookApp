@@ -1,8 +1,8 @@
 [
   {
     "type": "text",
-    "x": 519.7748176556432,
-    "y": 354.32869529474453,
+    "x": 509.05990830960195,
+    "y": 263.8075534573673,
     "id": "item3",
     "html": "<p><span style=\"color: rgb(255, 0, 0);\"><strong><em>Douasdfa</em></strong></span></p>",
     "text": "",
@@ -12,9 +12,9 @@
     "width": 91,
     "height": 31,
     "backgroundColor": "#7481aa",
-    "rotation": -48.08384933900487,
+    "rotation": 0.10343804250381052,
     "scaleX": 2.3434892030197814,
-    "scaleY": 2.1346979942285818
+    "scaleY": 2.134697994228583
   },
   {
     "type": "image",

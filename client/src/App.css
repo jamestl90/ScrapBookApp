@@ -170,3 +170,26 @@
   font-size: 3em;
   border-style: solid;
 }
+
+/* Audio record styling */
+.audio-recorder {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.audio-recorder h4 {
+  margin: 0;
+  font-weight: normal;
+}
+
+.audio-controls {
+  display: flex;
+  gap: 10px;
+}

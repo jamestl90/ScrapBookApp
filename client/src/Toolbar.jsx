@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-function Toolbar({ onAddItem, onSave, onFileSelect }) {
+function Toolbar({ onAddItem, onSave, onFileSelect, onRecordAudio }) {
   const fileInputRef = useRef(null);
 
   const handleAddImageClick = () => {
@@ -29,7 +29,7 @@ function Toolbar({ onAddItem, onSave, onFileSelect }) {
         accept="image/*" // Only allow image files
         onChange={handleFileChange} 
       />
-      <button>Record Audio</button>
+      <button onClick={onRecordAudio}>Record Audio</button>
       <button onClick={onSave} style={{ marginLeft: '20px' }}>
         Save
       </button>
