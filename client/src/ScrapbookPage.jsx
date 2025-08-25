@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Transformer, Group, Text } from 'react-konva';
 import html2canvas from 'html2canvas'; 
@@ -8,10 +8,13 @@ import CanvasImage from './CanvasImage';
 import RichTextEditor from './RichTextEditor';
 import AudioRecorder from './AudioRecorder';
 import AudioPlayer from './AudioPlayer';
+import InlineTextInput from './InlineTextInput';
 
 let idCounter = 2;
 
 function ScrapbookPage() {
+
+  const navigate = useNavigate();
   const { scrapbookId } = useParams();
   const [items, setItems] = useState([]);
   const [selectedId, selectShape] = useState(null);
@@ -25,6 +28,52 @@ function ScrapbookPage() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
+  const [inlineEditingItem, setInlineEditingItem] = useState(null);
+  const savedStateRef = useRef(null);
+
+  const handleBackToHome = () => {
+    const isActuallyDirty = JSON.stringify(items) !== savedStateRef.current;
+
+    if (!isActuallyDirty) {
+      navigate('/');
+      return;
+    }
+
+    const confirmLeave = window.confirm(
+      'You have unsaved changes. Are you sure you want to leave?'
+    );
+
+    if (confirmLeave) {
+      navigate('/');
+    }
+  };
+
+  const handleInlineTextChange = (e) => {
+    if (!inlineEditingItem) return;
+
+    const newText = e.target.value;
+    // Update the temporary editing state
+    setInlineEditingItem(prev => ({ ...prev, text: newText }));
+
+    // Update the main items array in real-time
+    const newItems = items.slice();
+    const itemToUpdate = newItems.find(i => i.id === inlineEditingItem.id);
+    if (itemToUpdate) {
+      itemToUpdate.text = newText;
+      setItems(newItems);
+    }
+  };
+
+  const handleInlineEditEnd = () => {
+    setInlineEditingItem(null);
+  };
+
+  const handleInlineKeyDown = (e) => {
+    // End editing when the user presses Enter
+    if (e.key === 'Enter') {
+      handleInlineEditEnd();
+    }
+  };
 
   const handleStartRecording = async () => {
     try {
@@ -81,36 +130,41 @@ function ScrapbookPage() {
   };
 
   const handleSave = () => {
-    console.log(`Saving scrapbook data for [${scrapbookId}]:`, items);
-
+    const itemsToSave = JSON.stringify(items); 
+    
     fetch(`/api/save/${scrapbookId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', },
-      body: JSON.stringify(items),
+      body: itemsToSave,
     })
     .then(response => response.json())
     .then(data => {
+      // After a successful save, the new "clean" state is what we just saved.
+      savedStateRef.current = itemsToSave;
       console.log('Server response:', data.message);
-      // We can add a user notification here later (e.g. "Saved!" toast message)
     })
-    .catch((error) => {
-      console.error('Error:', error);
-    });
+    .catch((error) => console.error('Error:', error));
   };
 
   useEffect(() => {
     fetch(`/api/load/${scrapbookId}`)
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setItems(data);
-          // Optional: Update the ID counter to avoid conflicts
-          // This is a simple way to do it for now.
-          const maxId = Math.max(...data.map(item => parseInt(item.id.replace('item', '')) || 0));
-          idCounter = maxId + 1;
+          // Store the loaded data as the "clean" state.
+          savedStateRef.current = JSON.stringify(data);
+          if (data.length > 0) {
+            const maxId = Math.max(...data.map(item => parseInt(item.id.replace('item', '')) || 0));
+            idCounter = maxId + 1;
+          }
         }
       })
-      .catch(err => console.error("Failed to load scrapbook data:", err));
+      .catch(err => {
+        setItems([]);
+        savedStateRef.current = JSON.stringify([]); // On error, an empty canvas is the clean state.
+        console.error("Failed to load scrapbook data:", err)
+      });
   }, [scrapbookId]);
 
   const handleEditingDone = async () => {
@@ -209,7 +263,7 @@ function ScrapbookPage() {
             };
           } else if (file.type.startsWith('audio/')) {
             newItem = {
-              type: 'audio', x: 50, y: 50, id: newId,
+              type: 'audio', id: newId,
               x: window.innerWidth / 2 - 100, 
               y: window.innerHeight / 2 - 30,
               src: data.filePath,
@@ -322,8 +376,27 @@ function ScrapbookPage() {
 
   return (
     <>
+      <button onClick={handleBackToHome} className="back-to-home-button">
+        &larr; Home
+      </button>
       <Toolbar onAddItem={addItem} onSave={handleSave} 
       onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
+      {inlineEditingItem && (
+        <InlineTextInput
+          value={inlineEditingItem.text}
+          onChange={handleInlineTextChange}
+          onBlur={handleInlineEditEnd}
+          onKeyDown={handleInlineKeyDown}
+          style={{
+            top: inlineEditingItem.y,
+            left: inlineEditingItem.x,
+            width: inlineEditingItem.width,
+            height: inlineEditingItem.height,
+            fontSize: '16px',
+            paddingLeft: '50px' // Offset to not cover the play button
+          }}
+        />
+      )}
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
@@ -437,6 +510,24 @@ function ScrapbookPage() {
                   onDragEnd={handleDragEnd}
                   onClick={() => selectShape(item.id)}
                   onTap={() => selectShape(item.id)}
+                  onDblClick={(e) => {
+                    const node = e.currentTarget;
+                    const stage = node.getStage();
+                    const stageBox = stage.container().getBoundingClientRect();
+                    const nodeBox = node.getClientRect({ relativeTo: stage });
+
+                    // Launch the inline editor
+                    setInlineEditingItem({
+                      id: item.id,
+                      text: item.text,
+                      x: stageBox.left + nodeBox.x,
+                      y: stageBox.top + nodeBox.y,
+                      width: item.width,
+                      height: item.height,
+                    });
+                    // Deselect the item to hide the transformer
+                    selectShape(null);
+                  }}
                 />
               );
             }

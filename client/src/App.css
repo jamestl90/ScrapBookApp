@@ -193,3 +193,31 @@
   display: flex;
   gap: 10px;
 }
+
+/* Inline text input styling */
+.inline-text-input {
+  position: absolute;
+  color: black;
+  border: 1px solid #66b2ff; /* A blue border to show it's active */
+  padding: 0;
+  margin: 0;
+  background: #f0f0f0; /* Match the audio player background */
+  outline: none;
+  font-family: sans-serif;
+  z-index: 100;
+}
+
+/* Back to home button */
+.back-to-home-button {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  background: #f0f0f0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  color: #333;
+  text-decoration: none;
+  font-weight: bold;
+}

@@ -27,5 +27,20 @@
     "rotation": 0,
     "scaleX": 3.0458106474303355,
     "scaleY": 3.045810647430338
+  },
+  {
+    "type": "audio",
+    "x": 982.5,
+    "y": 247,
+    "id": "item6",
+    "src": "/uploads/recording-1756018564709-1756018564712-986026577.webm",
+    "text": "asdfasdfas",
+    "width": 200,
+    "height": 60,
+    "rotation": 0,
+    "scaleX": 1,
+    "scaleY": 1,
+    "offsetX": 100,
+    "offsetY": 30
   }
 ]
