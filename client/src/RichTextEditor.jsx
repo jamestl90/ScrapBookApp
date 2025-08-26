@@ -6,7 +6,7 @@ import { Color } from '@tiptap/extension-color';
 import { Heading } from '@tiptap/extension-heading'; 
 
 // This is the menu bar that will have buttons for bold, italic, etc.
-const MenuBar = ({ editor, onBgChange }) => {
+const MenuBar = ({ editor, onBgChange, bgColor }) => {
   if (!editor) {
     return null;
   }
@@ -58,7 +58,7 @@ const MenuBar = ({ editor, onBgChange }) => {
       <label>Background</label>
       <input
         type="color"
-        value={editor.getAttributes('textStyle').backgroundColor || '#FFFFFF'}
+        value={bgColor === 'transparent' ? '#ffffff' : bgColor || '#ffffff'}
         onInput={event => onBgChange(event.target.value)}
         data-testid="setBgColor"
       />
@@ -93,7 +93,7 @@ const RichTextEditor = ({ content, onUpdate, bgColor, onBgChange }) => {
 
   return (
     <div className="text-editor-container">
-      <MenuBar editor={editor} onBgChange={onBgChange} />
+      <MenuBar editor={editor} onBgChange={onBgChange} bgColor={bgColor} />
       <EditorContent editor={editor} />
     </div>
   );

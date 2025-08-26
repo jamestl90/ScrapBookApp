@@ -267,7 +267,7 @@ function ScrapbookPage() {
               x: window.innerWidth / 2 - 100, 
               y: window.innerHeight / 2 - 30,
               src: data.filePath,
-              text: 'My Recording', // Default editable text
+              text: 'Recording Name', // Default editable text
               width: 200, height: 60, // Default size for the audio player
               rotation: 0, scaleX: 1, scaleY: 1,
               offsetX: 100, offsetY: 30,
@@ -392,8 +392,12 @@ function ScrapbookPage() {
             left: inlineEditingItem.x,
             width: inlineEditingItem.width,
             height: inlineEditingItem.height,
-            fontSize: '16px',
-            paddingLeft: '50px' // Offset to not cover the play button
+            fontSize: '16px', 
+            outline: 'none',
+            border: 'none',
+            padding: 0,
+            margin: 0, 
+            backgroundColor: 'transparent',
           }}
         />
       )}
@@ -505,7 +509,8 @@ function ScrapbookPage() {
                 <AudioPlayer
                   key={item.id}
                   id={item.id}
-                  {...item} // Pass all props like x, y, width, height, text, src
+                  {...item} 
+                  isEditing={inlineEditingItem?.id === item.id}
                   draggable
                   onDragEnd={handleDragEnd}
                   onClick={() => selectShape(item.id)}
@@ -513,17 +518,24 @@ function ScrapbookPage() {
                   onDblClick={(e) => {
                     const node = e.currentTarget;
                     const stage = node.getStage();
+                    const textNode = node.findOne('.audio-text'); 
+                    if (!textNode) return;
                     const stageBox = stage.container().getBoundingClientRect();
-                    const nodeBox = node.getClientRect({ relativeTo: stage });
+                    const textNodeBox = textNode.getClientRect({ relativeTo: stage });
+
+                    const scaleY = textNode.getAbsoluteScale().y;
+                    const fontSize = textNode.fontSize();
+                    const apparentFontSize = fontSize * scaleY;
 
                     // Launch the inline editor
                     setInlineEditingItem({
                       id: item.id,
                       text: item.text,
-                      x: stageBox.left + nodeBox.x,
-                      y: stageBox.top + nodeBox.y,
-                      width: item.width,
-                      height: item.height,
+                      x: stageBox.left + textNodeBox.x,
+                      y: stageBox.top + textNodeBox.y,
+                      width: textNodeBox.width,
+                      height: textNodeBox.height,
+                      fontSize: apparentFontSize,
                     });
                     // Deselect the item to hide the transformer
                     selectShape(null);

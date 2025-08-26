@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 
-const AudioPlayer = ({ src, text, width, height, ...props }) => {
+const AudioPlayer = ({ src, text, isEditing, width, height, ...props }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   // useMemo ensures the Audio object is created only once
@@ -44,6 +44,8 @@ const AudioPlayer = ({ src, text, width, height, ...props }) => {
 
       {/* Recording Name */}
       <Text
+        visible={!isEditing}
+        name="audio-text"
         text={text}
         fontSize={16}
         x={50}
