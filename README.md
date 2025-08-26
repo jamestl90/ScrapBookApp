@@ -2,7 +2,9 @@ A simple note taking / scrapbooking app.
 
 Tech Stack Breakdown
 The application is built with a modern JavaScript stack, featuring a clear separation between the frontend and backend.
+
 Frontend (Client)
+
 The client-side is a single-page application built using the following technologies:
 React: A JavaScript library for building user interfaces with a component-based architecture.
 Vite: A fast, next-generation frontend build tool and development server. It provides a quicker development experience through features like Hot Module Replacement (HMR).
