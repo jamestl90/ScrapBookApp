@@ -5,8 +5,8 @@ The application is built with a modern JavaScript stack, featuring a clear separ
 
 Frontend (Client)
 
-The client-side is a single-page application built using the following technologies:
-React: A JavaScript library for building user interfaces with a component-based architecture.
+The client-side is a single-page application built using the following technologies:\
+React: A JavaScript library for building user interfaces with a component-based architecture.\
 Vite: A fast, next-generation frontend build tool and development server. It provides a quicker development experience through features like Hot Module Replacement (HMR).
 React Router (react-router-dom): A library for handling client-side routing, enabling navigation between different views or pages within the single-page application, such as the HomePage and the scrapbook canvas.
 Konva & react-konva: Konva is a 2D canvas JavaScript library for creating interactive and high-performance graphics. react-konva provides the React bindings for Konva, allowing you to build canvas graphics declaratively within your React components.
