@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 
-function Toolbar({ onAddItem, onSave, onFileSelect, onRecordAudio }) {
+function Toolbar({ onAddItem, onSave, onDelete, onFileSelect, onRecordAudio }) {
   const fileInputRef = useRef(null);
 
   const handleAddImageClick = () => {
@@ -20,8 +20,8 @@ function Toolbar({ onAddItem, onSave, onFileSelect, onRecordAudio }) {
   return (
     <div className="toolbar">
       {/* Pass 'text' to the onAddItem function */}
-      <button onClick={() => onAddItem('text')}>Add Text</button>
-      <button onClick={handleAddImageClick}>Add Image</button>
+      <button onClick={() => onAddItem('text')}>Text</button>
+      <button onClick={handleAddImageClick}>Image</button>
       <input 
         type="file" 
         ref={fileInputRef} 
@@ -32,6 +32,9 @@ function Toolbar({ onAddItem, onSave, onFileSelect, onRecordAudio }) {
       <button onClick={onRecordAudio}>Record Audio</button>
       <button onClick={onSave} style={{ marginLeft: '20px' }}>
         Save
+      </button>
+      <button onClick={onDelete} >
+        Delete
       </button>
     </div>
   );

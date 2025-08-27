@@ -127,6 +127,37 @@ function ScrapbookPage() {
     .catch((error) => console.error('Error:', error));
   };
 
+  const handleDelete = () => {
+    // Show a confirmation dialog, similar to the back button.
+    const confirmDelete = window.confirm(
+      'Are you sure you want to permanently delete this scrapbook? This action cannot be undone.'
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    fetch(`/api/delete/${scrapbookId}`, {
+      method: 'DELETE',
+    })
+    .then(response => {
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Server response:', data.message);
+      alert('Scrapbook deleted successfully.'); // Inform the user
+      navigate('/'); // Redirect to the home page
+    })
+    .catch((error) => {
+      console.error('Error:', error);
+      alert('An error occurred while trying to delete the scrapbook.');
+    });
+  };
+
   useEffect(() => {
     fetch(`/api/load/${scrapbookId}`)
       .then(res => res.json())
@@ -160,6 +191,7 @@ function ScrapbookPage() {
     renderContainer.style.position = 'absolute';
     renderContainer.style.left = '-9999px';
     renderContainer.style.top = '-9999px';
+    renderContainer.style.padding = '4px';
     renderContainer.style.padding = '0';
     renderContainer.style.margin = '0';
     renderContainer.style.display = 'inline-block';
@@ -182,7 +214,6 @@ function ScrapbookPage() {
       // force a minimum size for empty text
       renderContainer.style.width = '100px';   // or any minimum width
       renderContainer.style.height = '30px';   // or any minimum height
-      // optionally insert a zero-width space so html2canvas sees content
       clone.textContent = '\u200B';
     }
 
@@ -191,15 +222,13 @@ function ScrapbookPage() {
       el.style.margin = '0';
     });
 
-    // remove ProseMirror padding
-    clone.style.padding = '0';
-    clone.style.margin = '0';
 
     renderContainer.appendChild(clone);
     document.body.appendChild(renderContainer);
 
     const canvas = await html2canvas(renderContainer, {
       backgroundColor: bgColor,
+      scale: 1,
     });
     const dataUrl = canvas.toDataURL('image/png');
 
@@ -389,7 +418,7 @@ function ScrapbookPage() {
       <button onClick={handleBackToHome} className="back-to-home-button">
         &larr; Home
       </button>
-      <Toolbar onAddItem={addItem} onSave={handleSave} 
+      <Toolbar onAddItem={addItem} onSave={handleSave} onDelete={handleDelete}
         onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >

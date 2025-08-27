@@ -80,6 +80,29 @@ app.get('/api/load/:id', (req, res) => {
   });
 });
 
+app.delete('/api/delete/:id', (req, res) => {
+  const scrapbookId = req.params.id;
+  const safeId = path.basename(scrapbookId); // Sanitize ID for security
+  const filePath = path.join(__dirname, 'data', `${safeId}.json`);
+
+  // fs.unlink is the Node.js function to delete a file
+  fs.unlink(filePath, (err) => {
+    if (err) {
+      // If the file doesn't exist, it's not an error in this case.
+      // The goal is for the file to be gone, and it already is.
+      if (err.code === 'ENOENT') {
+        console.log(`Attempted to delete scrapbook [${safeId}], but it was not found.`);
+        return res.status(200).json({ message: 'Scrapbook not found, but considered deleted.' });
+      }
+      // For any other errors (e.g., permissions), send a server error.
+      console.error('Error deleting data:', err);
+      return res.status(500).json({ message: 'Failed to delete scrapbook.' });
+    }
+    console.log(`Scrapbook [${safeId}] deleted successfully!`);
+    res.status(200).json({ message: 'Scrapbook deleted successfully!' });
+  });
+});
+
 app.get('/api/scrapbooks', (req, res) => {
   const dataPath = path.join(__dirname, 'data');
 

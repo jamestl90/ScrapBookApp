@@ -7,7 +7,7 @@ import { Color } from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
 import './RichTextEditor.css'; 
 import { 
-  FaBold, FaItalic, FaAlignLeft, FaAlignCenter, FaAlignRight 
+  FaBold, FaItalic, FaAlignLeft, FaAlignCenter, FaAlignRight, FaUnderline, FaStrikethrough
 } from 'react-icons/fa';
 
 function toHex(color) {
@@ -59,21 +59,27 @@ const Toolbar = ({ editor, onBgChange, bgColor }) => {
       </select>
 
       {/* Bold, Italic */}
-      <button onClick={() => editor.chain().focus().toggleBold().run()} className={editor.isActive('bold') ? 'is-active' : ''} title="Bold">
+      <button onClick={() => editor.chain().focus().toggleBold().run()} className={`toolbar-button ${editor.isActive('bold') ? 'is-active' : ''}`} title="Bold">
         <FaBold />
       </button>
-      <button onClick={() => editor.chain().focus().toggleItalic().run()} className={editor.isActive('italic') ? 'is-active' : ''} title="Italic">
+      <button onClick={() => editor.chain().focus().toggleItalic().run()} className={`toolbar-button ${editor.isActive('italic') ? 'is-active' : ''}`} title="Italic">
         <FaItalic />
       </button>
+      <button onClick={() => editor.chain().focus().toggleUnderline().run()} className={`toolbar-button ${editor.isActive('underline') ? 'is-active' : ''}`} title="Underline">
+        <FaUnderline />
+      </button>
+      <button onClick={() => editor.chain().focus().toggleStrike().run()} className={`toolbar-button ${editor.isActive('strike') ? 'is-active' : ''}`} title="Strikethrough">
+        <FaStrikethrough />
+      </button>
 
-      {/* Text Alignment - now with icons */}
-      <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''} title="Align Left">
+      {/* Text Alignment */}
+      <button onClick={() => editor.chain().focus().setTextAlign('left').run()} className={`toolbar-button ${editor.isActive({ textAlign: 'left' }) ? 'is-active' : ''}`} title="Align Left">
         <FaAlignLeft />
       </button>
-      <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''} title="Align Center">
+      <button onClick={() => editor.chain().focus().setTextAlign('center').run()} className={`toolbar-button ${editor.isActive({ textAlign: 'center' }) ? 'is-active' : ''}`} title="Align Center">
         <FaAlignCenter />
       </button>
-      <button onClick={() => editor.chain().focus().setTextAlign('right').run()} className={editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''} title="Align Right">
+      <button onClick={() => editor.chain().focus().setTextAlign('right').run()} className={`toolbar-button ${editor.isActive({ textAlign: 'right' }) ? 'is-active' : ''}`} title="Align Right">
         <FaAlignRight />
       </button>
 
