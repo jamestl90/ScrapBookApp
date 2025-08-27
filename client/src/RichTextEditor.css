@@ -1,0 +1,66 @@
+.text-editor-container {
+  border: 1px solid #555;
+  background-color: #2d2d2d;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-bottom: 1px solid #555;
+  background-color: #3a3a3a;
+}
+
+.toolbar-button {
+  background-color: transparent;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 16px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-button:hover {
+  background-color: #4a4a4a;
+}
+
+.toolbar-button.is-active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* This fixes the text alignment issue you mentioned */
+.ProseMirror {
+  padding: 8px;
+  outline: none;
+  color: #e0e0e0;
+}
+
+/* This ensures all content inside the editor defaults to left-aligned */
+.ProseMirror p,
+.ProseMirror h1,
+.ProseMirror h2,
+.ProseMirror h3 {
+  text-align: left;
+}
+
+/* Style for the placeholder text */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #aaa;
+  pointer-events: none;
+  height: 0;
+}

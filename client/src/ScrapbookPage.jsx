@@ -152,29 +152,58 @@ function ScrapbookPage() {
     if (!editingItem || !popoverRef.current) return;
 
     const editorNode = popoverRef.current.querySelector('.ProseMirror');
-    const clone = editorNode.cloneNode(true);
+    if (!editorNode) return;
 
     const bgColor = editingItem.backgroundColor === 'transparent' ? null : editingItem.backgroundColor;
 
-    // Trim any trailing empty paragraph tags from the clone.
-    while (
-      clone.lastChild &&
-      (clone.lastChild.textContent.trim() === '' || clone.lastChild.innerHTML === '<br>')
-    ) {
+    const renderContainer = document.createElement('div');
+    renderContainer.style.position = 'absolute';
+    renderContainer.style.left = '-9999px';
+    renderContainer.style.top = '-9999px';
+    renderContainer.style.padding = '0';
+    renderContainer.style.margin = '0';
+    renderContainer.style.display = 'inline-block';
+    renderContainer.style.background = bgColor || 'transparent';
+
+    // clone editor content
+    const clone = editorNode.cloneNode(true);
+
+    // remove contenteditable so cursor styling doesn't interfere
+    clone.removeAttribute('contenteditable');
+
+    // remove trailing empty nodes
+    while (clone.lastChild && (clone.lastChild.textContent.trim() === '' || clone.lastChild.innerHTML === '<br>')) {
       clone.removeChild(clone.lastChild);
     }
-    
-    clone.style.position = 'absolute';
-    clone.style.top = '-9999px';
-    clone.style.left = '-9999px';
-    document.body.appendChild(clone);
 
-    const canvas = await html2canvas(clone, {
-      backgroundColor: bgColor, 
-      logging: false, 
+    const isEmpty = !clone.textContent.trim();
+
+    if (isEmpty) {
+      // force a minimum size for empty text
+      renderContainer.style.width = '100px';   // or any minimum width
+      renderContainer.style.height = '30px';   // or any minimum height
+      // optionally insert a zero-width space so html2canvas sees content
+      clone.textContent = '\u200B';
+    }
+
+    // remove paragraph/heading margins to collapse vertical space
+    clone.querySelectorAll('p, h1, h2, h3, h4, h5, h6').forEach(el => {
+      el.style.margin = '0';
+    });
+
+    // remove ProseMirror padding
+    clone.style.padding = '0';
+    clone.style.margin = '0';
+
+    renderContainer.appendChild(clone);
+    document.body.appendChild(renderContainer);
+
+    const canvas = await html2canvas(renderContainer, {
+      backgroundColor: bgColor,
     });
     const dataUrl = canvas.toDataURL('image/png');
-    document.body.removeChild(clone);
+
+    document.body.removeChild(renderContainer);
 
     const newItems = items.slice();
     const itemToUpdate = newItems.find(i => i.id === editingItem.id);
@@ -330,11 +359,11 @@ function ScrapbookPage() {
     if (type === 'text') {
       const newItem = {
         type: 'text', x: 50, y: 50, id: newId,
-        html: '<p style="color: #ffffff">Double click to edit</p>',
-        text: 'Double click to edit',
+        html: '', 
+        text: 'New Text Box', // This is for the placeholder before editing
         fill: '#000', fontSize: 24,
         image: null, width: 200, height: 50,
-        //backgroundColor: '#333333',
+        backgroundColor: '#333333', // A default dark background
         rotation: 0,
         scaleX: 1,
         scaleY: 1,
