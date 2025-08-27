@@ -1,16 +1,27 @@
-import React from 'react';
-import { Image } from 'react-konva';
-import useImage from 'use-image';
+import { Image as KonvaImage } from 'react-konva';
+import { useEffect, useState } from 'react';
 
-const CanvasImage = ({ src, image: _image, fill: _fill, ...props }) => {
-  const [image] = useImage(src, 'Anonymous');
+// --- START OF MODIFICATION ---
+// We destructure 'image' and rename it to '_' (a throwaway variable)
+// to prevent it from being included in the '...props' spread.
+export default function CanvasImage({ src, image: _, ...props }) {
+// --- END OF MODIFICATION ---
+  const [imageObj, setImageObj] = useState(null);
 
+  useEffect(() => {
+    if (!src) return;
+    const img = new window.Image();
+    img.onload = () => setImageObj(img);
+    img.src = src;
+  }, [src]);
+
+  if (!imageObj) return null;
+
+  // Now, '...props' will never contain the conflicting 'image' string prop
   return (
-    <Image
-      image={image}
-      {...props} 
+    <KonvaImage
+      image={imageObj}
+      {...props}
     />
   );
-};
-
-export default CanvasImage;
+}

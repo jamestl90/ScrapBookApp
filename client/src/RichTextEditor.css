@@ -43,7 +43,7 @@
 
 /* This fixes the text alignment issue you mentioned */
 .ProseMirror {
-  padding: 4px;
+  padding: 2px;
   outline: none;
   color: #e0e0e0;
 }

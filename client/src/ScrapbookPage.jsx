@@ -19,6 +19,8 @@ function ScrapbookPage() {
   const [items, setItems] = useState([]);
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
+  const [stageScale, setStageScale] = useState(1);
+  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
   const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
   const trRef = useRef();
@@ -55,6 +57,41 @@ function ScrapbookPage() {
       return item;
     });
     setItems(newItems);
+  };
+
+  const handleWheel = (e) => {
+    e.evt.preventDefault();
+
+    const scaleBy = 1.1;
+    const stage = e.target.getStage();
+    const pointer = stage.getPointerPosition();
+
+    // Use our React state as the source of truth for the old scale and position
+    const oldScale = stageScale;
+    const oldPos = stagePos;
+
+    const mousePointTo = {
+      x: (pointer.x - oldPos.x) / oldScale,
+      y: (pointer.y - oldPos.y) / oldScale,
+    };
+
+    const direction = e.evt.deltaY > 0 ? -1 : 1;
+
+    // Set a min and max scale to prevent zooming out/in too far
+    const minScale = 0.1;
+    const maxScale = 10.0;
+
+    let newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
+    // Clamp the new scale to our min/max values
+    newScale = Math.max(minScale, Math.min(newScale, maxScale));
+
+    setStageScale(newScale);
+
+    const newPos = {
+      x: pointer.x - mousePointTo.x * newScale,
+      y: pointer.y - mousePointTo.y * newScale,
+    };
+    setStagePos(newPos);
   };
 
   const handleStartRecording = async () => {
@@ -237,16 +274,17 @@ function ScrapbookPage() {
       el.style.margin = '0';
     });
 
-
     renderContainer.appendChild(clone);
     document.body.appendChild(renderContainer);
 
     const canvas = await html2canvas(renderContainer, {
       backgroundColor: bgColor,
-      scale: 1,
+      scale: 2,
     });
     const dataUrl = canvas.toDataURL('image/png');
 
+    const finalWidth = renderContainer.offsetWidth;
+    const finalHeight = renderContainer.offsetHeight;
     document.body.removeChild(renderContainer);
 
     const newItems = items.slice();
@@ -254,8 +292,8 @@ function ScrapbookPage() {
     if (itemToUpdate) {
       itemToUpdate.image = dataUrl;
       itemToUpdate.text = '';
-      itemToUpdate.width = canvas.width;
-      itemToUpdate.height = canvas.height;
+      itemToUpdate.width = finalWidth;
+      itemToUpdate.height = finalHeight;
     }
     setItems(newItems);
     setEditingItem(null);
@@ -460,7 +498,10 @@ function ScrapbookPage() {
           />
         </div>
       )}
-      <Stage width={window.innerWidth} height={window.innerHeight} onMouseDown={checkDeselect} onTouchStart={checkDeselect}>
+      <Stage width={window.innerWidth} height={window.innerHeight} 
+      onMouseDown={checkDeselect} 
+      onWheel={handleWheel}
+      onTouchStart={checkDeselect}>
         <Layer ref={layerRef}>
           {items.map((item) => {
             if (item.type === 'rect') {
