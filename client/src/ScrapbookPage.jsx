@@ -8,7 +8,6 @@ import CanvasImage from './CanvasImage';
 import RichTextEditor from './RichTextEditor';
 import AudioRecorder from './AudioRecorder';
 import AudioPlayer from './AudioPlayer';
-import InlineTextInput from './InlineTextInput';
 
 let idCounter = 2;
 
@@ -28,7 +27,6 @@ function ScrapbookPage() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
-  const [inlineEditingItem, setInlineEditingItem] = useState(null);
   const savedStateRef = useRef(null);
 
   const handleBackToHome = () => {
@@ -48,31 +46,14 @@ function ScrapbookPage() {
     }
   };
 
-  const handleInlineTextChange = (e) => {
-    if (!inlineEditingItem) return;
-
-    const newText = e.target.value;
-    // Update the temporary editing state
-    setInlineEditingItem(prev => ({ ...prev, text: newText }));
-
-    // Update the main items array in real-time
-    const newItems = items.slice();
-    const itemToUpdate = newItems.find(i => i.id === inlineEditingItem.id);
-    if (itemToUpdate) {
-      itemToUpdate.text = newText;
-      setItems(newItems);
-    }
-  };
-
-  const handleInlineEditEnd = () => {
-    setInlineEditingItem(null);
-  };
-
-  const handleInlineKeyDown = (e) => {
-    // End editing when the user presses Enter
-    if (e.key === 'Enter') {
-      handleInlineEditEnd();
-    }
+  const handleAudioTextChange = (itemId, newText) => {
+    const newItems = items.map(item => {
+      if (item.id === itemId) {
+        return { ...item, text: newText };
+      }
+      return item;
+    });
+    setItems(newItems);
   };
 
   const handleStartRecording = async () => {
@@ -380,27 +361,7 @@ function ScrapbookPage() {
         &larr; Home
       </button>
       <Toolbar onAddItem={addItem} onSave={handleSave} 
-      onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
-      {inlineEditingItem && (
-        <InlineTextInput
-          value={inlineEditingItem.text}
-          onChange={handleInlineTextChange}
-          onBlur={handleInlineEditEnd}
-          onKeyDown={handleInlineKeyDown}
-          style={{
-            top: inlineEditingItem.y,
-            left: inlineEditingItem.x,
-            width: inlineEditingItem.width,
-            height: inlineEditingItem.height,
-            fontSize: '16px', 
-            outline: 'none',
-            border: 'none',
-            padding: 0,
-            margin: 0, 
-            backgroundColor: 'transparent',
-          }}
-        />
-      )}
+        onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
@@ -510,36 +471,14 @@ function ScrapbookPage() {
                   key={item.id}
                   id={item.id}
                   {...item} 
-                  isEditing={inlineEditingItem?.id === item.id}
                   draggable
                   onDragEnd={handleDragEnd}
-                  onClick={() => selectShape(item.id)}
-                  onTap={() => selectShape(item.id)}
-                  onDblClick={(e) => {
-                    const node = e.currentTarget;
-                    const stage = node.getStage();
-                    const textNode = node.findOne('.audio-text'); 
-                    if (!textNode) return;
-                    const stageBox = stage.container().getBoundingClientRect();
-                    const textNodeBox = textNode.getClientRect({ relativeTo: stage });
-
-                    const scaleY = textNode.getAbsoluteScale().y;
-                    const fontSize = textNode.fontSize();
-                    const apparentFontSize = fontSize * scaleY;
-
-                    // Launch the inline editor
-                    setInlineEditingItem({
-                      id: item.id,
-                      text: item.text,
-                      x: stageBox.left + textNodeBox.x,
-                      y: stageBox.top + textNodeBox.y,
-                      width: textNodeBox.width,
-                      height: textNodeBox.height,
-                      fontSize: apparentFontSize,
-                    });
-                    // Deselect the item to hide the transformer
-                    selectShape(null);
+                  onClick={(e) => {
+                    if (e.evt.detail === 2) return;
+                    selectShape(item.id);
                   }}
+                  onTap={() => selectShape(item.id)}
+                  onTextChange={(newText) => handleAudioTextChange(item.id, newText)}
                 />
               );
             }
