@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Stage, Layer, Rect } from 'react-konva';
 import { Outlet } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -29,6 +30,23 @@ function App() {
       <main>
         <Outlet />
       </main>
+
+      <Toaster 
+        position="top-center"
+        toastOptions={{
+          // Define default options
+          duration: 5000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+
+          // Default options for specific types
+          success: {
+            duration: 3000,
+          },
+        }}
+      />
     </div>
   );
 }

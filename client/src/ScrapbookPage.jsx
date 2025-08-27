@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { Stage, Layer, Rect, Transformer, Group, Text } from 'react-konva';
 import html2canvas from 'html2canvas'; 
+import toast from 'react-hot-toast';
 
 import Toolbar from './Toolbar';
 import CanvasImage from './CanvasImage';
@@ -113,18 +114,31 @@ function ScrapbookPage() {
   const handleSave = () => {
     const itemsToSave = JSON.stringify(items); 
     
-    fetch(`/api/save/${scrapbookId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', },
-      body: itemsToSave,
-    })
-    .then(response => response.json())
-    .then(data => {
-      // After a successful save, the new "clean" state is what we just saved.
-      savedStateRef.current = itemsToSave;
-      console.log('Server response:', data.message);
-    })
-    .catch((error) => console.error('Error:', error));
+    toast.promise(
+      fetch(`/api/save/${scrapbookId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', },
+        body: itemsToSave,
+      })
+      .then(response => {
+        if (!response.ok) {
+          // Make sure to throw an error on a bad response to trigger the error toast
+          throw new Error('Save failed');
+        }
+        return response.json();
+      })
+      .then(data => {
+        // This runs on success
+        savedStateRef.current = itemsToSave;
+        // The success message is handled by toast.promise, but you can still log if you want
+        console.log('Server response:', data.message);
+      }),
+      {
+        loading: 'Saving scrapbook...',
+        success: <b>Scrapbook saved!</b>,
+        error: <b>Could not save scrapbook.</b>,
+      }
+    );
   };
 
   const handleDelete = () => {
@@ -148,13 +162,13 @@ function ScrapbookPage() {
       return response.json();
     })
     .then(data => {
+      toast.success('Scrapbook deleted!');
       console.log('Server response:', data.message);
-      alert('Scrapbook deleted successfully.'); // Inform the user
       navigate('/'); // Redirect to the home page
     })
     .catch((error) => {
+      toast.error('Could not delete scrapbook.');
       console.error('Error:', error);
-      alert('An error occurred while trying to delete the scrapbook.');
     });
   };
 
@@ -173,6 +187,7 @@ function ScrapbookPage() {
         }
       })
       .catch(err => {
+        toast.error("Failed to load scrapbook data.");
         setItems([]);
         savedStateRef.current = JSON.stringify([]); // On error, an empty canvas is the clean state.
         console.error("Failed to load scrapbook data:", err)
