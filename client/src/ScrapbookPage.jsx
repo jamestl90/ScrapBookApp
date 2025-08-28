@@ -23,6 +23,8 @@ function ScrapbookPage() {
   const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
   const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
+  const isPanningRef = useRef(false);
+  const lastPointerPosRef = useRef({ x: 0, y: 0 });
   const trRef = useRef();
   const layerRef = useRef();
   const popoverRef = useRef(null);
@@ -31,6 +33,42 @@ function ScrapbookPage() {
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
   const savedStateRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    // Middle mouse button is usually button number 1
+    if (e.evt.button === 1) {
+      isPanningRef.current = true;
+      const stage = e.target.getStage();
+      lastPointerPosRef.current = stage.getPointerPosition();
+      stage.container().style.cursor = 'grabbing';
+    } else {
+      // If not middle mouse, call the original deselect logic
+      handleStageMouseDown(e);
+    }
+  };
+
+  const handleMouseUp = (e) => {
+    isPanningRef.current = false;
+    const stage = e.target.getStage();
+    // Only change cursor if a stage exists
+    if (stage && stage.container()) {
+      stage.container().style.cursor = 'default';
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPanningRef.current) {
+      const stage = e.target.getStage();
+      const newPointerPos = stage.getPointerPosition();
+      
+      const dx = newPointerPos.x - lastPointerPosRef.current.x;
+      const dy = newPointerPos.y - lastPointerPosRef.current.y;
+
+      stage.move({ x: dx, y: dy });
+      lastPointerPosRef.current = newPointerPos;
+      stage.batchDraw();
+    }
+  };
 
   const handleBackToHome = () => {
     const isActuallyDirty = JSON.stringify(items) !== savedStateRef.current;
@@ -451,7 +489,7 @@ function ScrapbookPage() {
     }
   };
 
-  const checkDeselect = (e) => {
+  const handleStageMouseDown = (e) => {
     const clickedOnEmpty = e.target === e.target.getStage();
     if (clickedOnEmpty) {
       selectShape(null);
@@ -496,9 +534,11 @@ function ScrapbookPage() {
         </div>
       )}
       <Stage width={window.innerWidth} height={window.innerHeight} 
-        onMouseDown={checkDeselect} 
+        onMouseDown={handleMouseDown} // Use the new combined handler
+        onMouseUp={handleMouseUp}     // Add this
+        onMouseMove={handleMouseMove}
         onWheel={handleWheel}
-        onTouchStart={checkDeselect}>
+        onTouchStart={handleStageMouseDown}>
         <Layer ref={layerRef}>
           {items.map((item) => {
             if (item.type === 'rect') {
