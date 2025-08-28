@@ -1,4 +1,4 @@
-https://trello.com/b/yqbvpTog/scrapbookapp
+Taskboard for this app: https://trello.com/b/yqbvpTog/scrapbookapp
 
 # ScrapBook Note-Taking App
 
