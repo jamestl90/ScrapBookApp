@@ -64,34 +64,31 @@ function ScrapbookPage() {
 
     const scaleBy = 1.1;
     const stage = e.target.getStage();
+    if (!stage) {
+      return;
+    }
+
+    const oldScale = stage.scaleX();
     const pointer = stage.getPointerPosition();
 
-    // Use our React state as the source of truth for the old scale and position
-    const oldScale = stageScale;
-    const oldPos = stagePos;
-
     const mousePointTo = {
-      x: (pointer.x - oldPos.x) / oldScale,
-      y: (pointer.y - oldPos.y) / oldScale,
+      x: (pointer.x - stage.x()) / oldScale,
+      y: (pointer.y - stage.y()) / oldScale,
     };
 
     const direction = e.evt.deltaY > 0 ? -1 : 1;
+    const newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-    // Set a min and max scale to prevent zooming out/in too far
-    const minScale = 0.1;
-    const maxScale = 10.0;
-
-    let newScale = direction > 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    // Clamp the new scale to our min/max values
-    newScale = Math.max(minScale, Math.min(newScale, maxScale));
-
-    setStageScale(newScale);
+    // Directly command the stage to update its scale and position
+    stage.scale({ x: newScale, y: newScale });
 
     const newPos = {
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     };
-    setStagePos(newPos);
+    stage.position(newPos);
+
+    stage.batchDraw();
   };
 
   const handleStartRecording = async () => {
@@ -499,9 +496,9 @@ function ScrapbookPage() {
         </div>
       )}
       <Stage width={window.innerWidth} height={window.innerHeight} 
-      onMouseDown={checkDeselect} 
-      onWheel={handleWheel}
-      onTouchStart={checkDeselect}>
+        onMouseDown={checkDeselect} 
+        onWheel={handleWheel}
+        onTouchStart={checkDeselect}>
         <Layer ref={layerRef}>
           {items.map((item) => {
             if (item.type === 'rect') {
