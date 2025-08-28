@@ -80,3 +80,20 @@
 .dropdown:hover .dropdown-content {
   display: block;
 }
+
+.scrapbook-title-container {
+  /* This container ensures the input and text take up the same space */
+  position: relative;
+}
+
+.title-input {
+  background-color: #4a4a4a;
+  border: 1px solid #0d6efd; /* Highlight with a blue border */
+  color: #e0e0e0;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 18px;
+  font-weight: 500;
+  outline: none;
+  font-family: inherit; /* Use the same font as the rest of the app */
+}

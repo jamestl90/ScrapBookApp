@@ -126,6 +126,32 @@ app.get('/api/scrapbooks', (req, res) => {
   });
 });
 
+app.post('/api/rename', (req, res) => {
+  const { oldId, newId } = req.body;
+
+  if (!oldId || !newId) {
+    return res.status(400).json({ message: 'Old and new IDs are required.' });
+  }
+
+  const safeOldId = path.basename(oldId);
+  const safeNewId = path.basename(newId);
+
+  const oldFilePath = path.join(__dirname, 'data', `${safeOldId}.json`);
+  const newFilePath = path.join(__dirname, 'data', `${safeNewId}.json`);
+
+  fs.rename(oldFilePath, newFilePath, (err) => {
+    if (err) {
+      if (err.code === 'ENOENT') {
+        return res.status(404).json({ message: 'Scrapbook to rename not found.' });
+      }
+      console.error('Error renaming data:', err);
+      return res.status(500).json({ message: 'Failed to rename scrapbook.' });
+    }
+    console.log(`Scrapbook [${safeOldId}] renamed to [${safeNewId}] successfully!`);
+    res.status(200).json({ message: 'Scrapbook renamed successfully!', newId: safeNewId });
+  });
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });

@@ -257,6 +257,35 @@ function ScrapbookPage() {
     });
   };
 
+  const handleRename = (newId) => {
+    if (!newId || newId.trim() === '') {
+      toast.error("Scrapbook name cannot be empty.");
+      return;
+    }
+
+    toast.promise(
+      fetch('/api/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldId: scrapbookId, newId: newId }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Rename failed');
+        }
+        return response.json();
+      })
+      .then(data => {
+        navigate(`/scrapbook/${data.newId}`, { replace: true });
+      }),
+      {
+        loading: 'Renaming...',
+        success: <b>Scrapbook renamed!</b>,
+        error: <b>Could not rename scrapbook.</b>,
+      }
+    );
+  };
+
   useEffect(() => {
     fetch(`/api/load/${scrapbookId}`)
       .then(res => res.json())
@@ -534,7 +563,7 @@ function ScrapbookPage() {
   return (
     <>
       {/* <Toolbar onAddItem={addItem} onSave={handleSave} onDelete={handleDeleteScrapbook} onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} /> */}
-      <TopBar scrapbookId={scrapbookId} onBack={handleBackToHome} onSave={handleSave} onDelete={handleDeleteScrapbook} />
+      <TopBar scrapbookId={scrapbookId} onBack={handleBackToHome} onSave={handleSave} onDelete={handleDeleteScrapbook} onRename={handleRename} />
       <FloatingToolbar onAddItem={addItem} onDeleteItem={deleteSelectedItem} selectedId={selectedId} />
       <input
         type="file"
