@@ -4,7 +4,8 @@ import { Stage, Layer, Rect, Transformer, Group, Text } from 'react-konva';
 import html2canvas from 'html2canvas'; 
 import toast from 'react-hot-toast';
 
-import Toolbar from './Toolbar';
+import FloatingToolbar from './FloatingToolbar'; 
+import TopBar from './TopBar';
 import CanvasImage from './CanvasImage';
 import RichTextEditor from './RichTextEditor';
 import AudioRecorder from './AudioRecorder';
@@ -19,10 +20,10 @@ function ScrapbookPage() {
   const [items, setItems] = useState([]);
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [stageScale, setStageScale] = useState(1);
-  const [stagePos, setStagePos] = useState({ x: 0, y: 0 });
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
   const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
+  const [audioPanelPosition, setAudioPanelPosition] = useState({ top: 0, left: 0 });
+  const fileInputRef = useRef(null);
   const isPanningRef = useRef(false);
   const lastPointerPosRef = useRef({ x: 0, y: 0 });
   const trRef = useRef();
@@ -33,6 +34,14 @@ function ScrapbookPage() {
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
   const savedStateRef = useRef(null);
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      uploadFile(file);
+    }
+    e.target.value = null; 
+  };
 
   const handleMouseDown = (e) => {
     // Middle mouse button is usually button number 1
@@ -181,8 +190,12 @@ function ScrapbookPage() {
       // Just call stop(). The onstop handler will do the rest.
       mediaRecorderRef.current.stop();
     }
+    else {
+      // If the panel is open but we aren't recording, just close it.
+      setIsAudioPanelOpen(false);
+    }
   };
-
+  
   const handleSave = () => {
     const itemsToSave = JSON.stringify(items); 
     
@@ -213,7 +226,7 @@ function ScrapbookPage() {
     );
   };
 
-  const handleDelete = () => {
+  const handleDeleteScrapbook = () => {
     // Show a confirmation dialog, similar to the back button.
     const confirmDelete = window.confirm(
       'Are you sure you want to permanently delete this scrapbook? This action cannot be undone.'
@@ -364,8 +377,7 @@ function ScrapbookPage() {
       const activeEl = document.activeElement;
       if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) return;
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        setItems(items.filter((item) => item.id !== selectedId));
-        selectShape(null);
+        deleteSelectedItem();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -471,7 +483,14 @@ function ScrapbookPage() {
     setItems(newItems);
   };
 
-  const addItem = (type) => {
+  const deleteSelectedItem = () => {
+    if (selectedId) {
+      setItems(items.filter((item) => item.id !== selectedId));
+      selectShape(null); // Deselect after deleting
+    }
+  };
+
+  const addItem = (type, position) => {
     const newId = `item${idCounter++}`;
     if (type === 'text') {
       const newItem = {
@@ -486,6 +505,14 @@ function ScrapbookPage() {
         scaleY: 1,
       };
       setItems([...items, newItem]);
+    } else if (type === 'audio') {
+      setAudioPanelPosition({
+        top: position.top + position.height / 2,
+        left: position.right + 10, // 10px to the right of the button
+      });
+      setIsAudioPanelOpen(true);
+    } else if (type === 'image') {
+      fileInputRef.current.click();
     }
   };
 
@@ -496,6 +523,9 @@ function ScrapbookPage() {
       if (editingItem) {
         handleEditingDone();
       }
+      if (isAudioPanelOpen) {
+        handleStopRecording(false); 
+      }
       setEditingItem(null);
       setPopoverPosition({ visible: false }); // Hide popover
     }
@@ -503,11 +533,16 @@ function ScrapbookPage() {
 
   return (
     <>
-      <button onClick={handleBackToHome} className="back-to-home-button">
-        &larr; Home
-      </button>
-      <Toolbar onAddItem={addItem} onSave={handleSave} onDelete={handleDelete}
-        onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} />
+      {/* <Toolbar onAddItem={addItem} onSave={handleSave} onDelete={handleDeleteScrapbook} onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} /> */}
+      <TopBar scrapbookId={scrapbookId} onBack={handleBackToHome} onSave={handleSave} onDelete={handleDeleteScrapbook} />
+      <FloatingToolbar onAddItem={addItem} onDeleteItem={deleteSelectedItem} selectedId={selectedId} />
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+        accept="image/*" 
+      />
       {popoverPosition.visible && (
         <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
           <RichTextEditor
@@ -521,9 +556,9 @@ function ScrapbookPage() {
       {isAudioPanelOpen && (
         <div style={{
           position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          top: `${audioPanelPosition.top}px`,
+          left: `${audioPanelPosition.left}px`,
+          transform: 'translateY(-50%)',
           zIndex: 100
         }}>
           <AudioRecorder

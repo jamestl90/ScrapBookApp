@@ -1,0 +1,82 @@
+.top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50px;
+  z-index: 200;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
+
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #555;
+  color: #e0e0e0;
+}
+
+.top-bar-left, .top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scrapbook-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.top-bar-button {
+  background: transparent;
+  border: none;
+  color: #e0e0e0;
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.top-bar-button:hover {
+  background-color: #4a4a4a;
+}
+
+/* --- Dropdown for Delete Button --- */
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  right: 0;
+  background-color: #3a3a3a;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.dropdown-content a {
+  color: #e0e0e0;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  font-size: 14px;
+}
+
+.dropdown-content a:hover {
+  background-color: #c84040; /* Red hover for destructive action */
+}
+
+.dropdown:hover .dropdown-content {
+  display: block;
+}
