@@ -52,7 +52,7 @@ app.post('/api/save/:id', (req, res) => {
   const filePath = path.join(__dirname, 'data', `${safeId}.json`);
 
   const jsonString = JSON.stringify(data, null, 2);
-
+  
   fs.writeFile(filePath, jsonString, (err) => {
     if (err) {
       console.error('Error saving data:', err);
@@ -71,12 +71,32 @@ app.get('/api/load/:id', (req, res) => {
   fs.readFile(filePath, 'utf8', (err, data) => {
     if (err) {
       if (err.code === 'ENOENT') {
+        // If the file doesn't exist, it's a new scrapbook. Send an empty array.
         return res.status(200).json([]);
       }
       console.error('Error loading data:', err);
       return res.status(500).json({ message: 'Failed to load scrapbook.' });
     }
-    res.status(200).json(JSON.parse(data));
+    
+    try {
+      const savedData = JSON.parse(data);
+      if (Array.isArray(savedData)) {
+        // It's the old format. Send it back directly for backwards compatibility.
+        res.status(200).json(savedData);
+      } else if (savedData && savedData.items) {
+        // It's the new format. Send back ONLY the 'items' array.
+        // The client only needs the item data to render the canvas.
+        res.status(200).json(savedData.items);
+      } else {
+        // The file is in an unknown or corrupted format. Treat it as empty.
+        console.warn(`Scrapbook [${safeId}] has an unknown format. Loading as empty.`);
+        res.status(200).json([]);
+      }
+    } catch (parseError) {
+      // If the JSON is malformed, we can't read it. Treat it as an error.
+      console.error(`Error parsing JSON for scrapbook [${safeId}]:`, parseError);
+      return res.status(500).json({ message: 'Failed to load scrapbook due to corrupted data.' });
+    }
   });
 });
 
@@ -150,6 +170,73 @@ app.post('/api/rename', (req, res) => {
     console.log(`Scrapbook [${safeOldId}] renamed to [${safeNewId}] successfully!`);
     res.status(200).json({ message: 'Scrapbook renamed successfully!', newId: safeNewId });
   });
+});
+
+app.post('/api/cleanup-uploads', (req, res) => {
+  console.log('Cleanup process started...');
+
+  const dataPath = path.join(__dirname, 'data');
+  const uploadsPath = path.join(__dirname, 'public', 'uploads');
+  
+  // Grace period in milliseconds (e.g., 24 hours)
+  // Any unreferenced file older than this will be deleted.
+  const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  // 1. Compile a master list of all files that are currently in use.
+  const protectedFiles = new Set();
+  
+  try {
+    const scrapbookFiles = fs.readdirSync(dataPath).filter(file => file.endsWith('.json'));
+
+    for (const file of scrapbookFiles) {
+      const filePath = path.join(dataPath, file);
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      const scrapbookData = JSON.parse(fileContent);
+
+      // Add files from the new 'usedUploads' property to our protected set
+      if (scrapbookData && scrapbookData.usedUploads && Array.isArray(scrapbookData.usedUploads)) {
+        scrapbookData.usedUploads.forEach(uploadPath => {
+          // We only care about the filename, not the full path
+          protectedFiles.add(path.basename(uploadPath));
+        });
+      }
+    }
+    console.log(`Found ${protectedFiles.size} protected files across all scrapbooks.`);
+  } catch (err) {
+    console.error('Error reading scrapbook data during cleanup:', err);
+    return res.status(500).json({ message: 'Failed to read scrapbook data.' });
+  }
+
+  // 2. Scan the uploads directory and delete orphaned files.
+  try {
+    const uploadedFiles = fs.readdirSync(uploadsPath);
+    let deletedCount = 0;
+
+    for (const file of uploadedFiles) {
+      // Check if the file is protected
+      if (protectedFiles.has(file)) {
+        continue; // Skip this file, it's in use
+      }
+
+      const filePath = path.join(uploadsPath, file);
+      const stats = fs.statSync(filePath);
+      const fileAge = now - stats.mtimeMs; // Time since last modification
+
+      // Check if the file is older than our grace period
+      if (fileAge > GRACE_PERIOD_MS) {
+        console.log(`Deleting orphaned file: ${file}`);
+        fs.unlinkSync(filePath);
+        deletedCount++;
+      }
+    }
+    
+    console.log(`Cleanup process finished. Deleted ${deletedCount} orphaned file(s).`);
+    res.status(200).json({ message: `Cleanup successful. Deleted ${deletedCount} file(s).` });
+  } catch (err) {
+    console.error('Error during file cleanup:', err);
+    return res.status(500).json({ message: 'An error occurred during cleanup.' });
+  }
 });
 
 app.listen(port, () => {

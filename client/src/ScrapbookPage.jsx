@@ -51,9 +51,11 @@ function ScrapbookPage() {
         scaleX: 1,
         scaleY: 1,
       };
-      const newItems = [...items, newItem];
-      saveToHistory(newItems);
-      setItems(newItems);
+      setItems(prevItems => {
+        const newItems = [...prevItems, newItem];
+        saveToHistory(newItems);
+        return newItems;
+      });
     } else if (type === 'audio') {
       setAudioPanelPosition({
         top: position.top + position.height / 2,
@@ -66,13 +68,16 @@ function ScrapbookPage() {
   };
     
   const saveToHistory = (newItems) => {
-    const newHistory = history.slice(0, historyStep + 1);
-    
-    newHistory.push(newItems);
-    
-    setHistory(newHistory);
-    setHistoryStep(newHistory.length - 1);
-    console.log("Save history");
+    setHistory(prevHistory => {
+      const newHistory = prevHistory.slice(0, historyStep + 1);
+      newHistory.push(newItems);
+      
+      // After calculating the new history, update the step based on its new length.
+      setHistoryStep(newHistory.length - 1);
+      
+      // Return the new history array to be set.
+      return newHistory;
+    });
   };
 
   const handleUndo = () => {
@@ -80,6 +85,8 @@ function ScrapbookPage() {
     if (historyStep === 0) {
       return;
     }
+
+    console.log("handleUndo called");
 
     const newStep = historyStep - 1;
     setHistoryStep(newStep);
@@ -378,7 +385,24 @@ function ScrapbookPage() {
   };
   
   const handleSave = () => {
-    const itemsToSave = JSON.stringify(items); 
+    const allUploadPaths = new Set();
+
+    for (const historyState of history) {
+      for (const item of historyState) {
+        if (item.src) {
+          allUploadPaths.add(item.src);
+        }
+      }
+    }
+
+    const usedUploads = [...allUploadPaths];
+
+    const dataToSave = {
+      items: items,
+      usedUploads: usedUploads,
+    };
+
+    const itemsToSave = JSON.stringify(dataToSave); 
     
     toast.promise(
       fetch(`/api/save/${scrapbookId}`, {
@@ -395,9 +419,7 @@ function ScrapbookPage() {
       })
       .then(data => {
         // This runs on success
-        savedStateRef.current = itemsToSave;
-        // The success message is handled by toast.promise, but you can still log if you want
-        console.log('Server response:', data.message);
+        savedStateRef.current = JSON.stringify(items);
       }),
       {
         loading: 'Saving scrapbook...',
