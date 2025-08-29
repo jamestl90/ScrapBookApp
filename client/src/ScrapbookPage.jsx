@@ -129,9 +129,11 @@ function ScrapbookPage() {
           }
 
           if (newItem) {
-            const newItems = [...prevItems, newItem];
-            saveToHistory(newItems);
-            return newItems;
+            setItems((prevItems) => {
+              const newItems = [...prevItems, newItem];
+              saveToHistory(newItems);
+              return newItems;
+            });
           }
         }
       })
