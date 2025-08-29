@@ -23,6 +23,8 @@ function ScrapbookPage() {
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
   const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
   const [audioPanelPosition, setAudioPanelPosition] = useState({ top: 0, left: 0 });
+  const [history, setHistory] = useState([[]]); 
+  const [historyStep, setHistoryStep] = useState(0);
   const fileInputRef = useRef(null);
   const isPanningRef = useRef(false);
   const lastPointerPosRef = useRef({ x: 0, y: 0 });
@@ -34,6 +36,173 @@ function ScrapbookPage() {
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
   const savedStateRef = useRef(null);
+
+  const addItem = (type, position) => {
+    const newId = `item${idCounter++}`;
+    if (type === 'text') {
+      const newItem = {
+        type: 'text', x: 50, y: 50, id: newId,
+        html: '', 
+        text: 'New Text Box', // This is for the placeholder before editing
+        fill: '#000', fontSize: 24,
+        image: null, width: 200, height: 50,
+        backgroundColor: '#333333', // A default dark background
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1,
+      };
+      const newItems = [...items, newItem];
+      saveToHistory(newItems);
+      setItems(newItems);
+    } else if (type === 'audio') {
+      setAudioPanelPosition({
+        top: position.top + position.height / 2,
+        left: position.right + 10, // 10px to the right of the button
+      });
+      setIsAudioPanelOpen(true);
+    } else if (type === 'image') {
+      fileInputRef.current.click();
+    }
+  };
+    
+  const saveToHistory = (newItems) => {
+    const newHistory = history.slice(0, historyStep + 1);
+    
+    newHistory.push(newItems);
+    
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+    console.log("Save history");
+  };
+
+  const handleUndo = () => {
+    // Can't undo if we're at the very beginning of history
+    if (historyStep === 0) {
+      return;
+    }
+
+    const newStep = historyStep - 1;
+    setHistoryStep(newStep);
+    
+    setItems(history[newStep]);
+  };
+
+  const handleRedo = () => {
+    // Can't redo if we're at the most recent change
+    if (historyStep === history.length - 1) {
+      return;
+    }
+
+    const newStep = historyStep + 1;
+    setHistoryStep(newStep);
+
+    setItems(history[newStep]);
+  };
+  
+  const uploadFile = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/api/upload', { method: 'POST', body: formData, })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.filePath) {
+          const newId = `item${idCounter++}`;
+          
+          let newItem;
+          if (file.type.startsWith('image/')) {
+            newItem = { 
+              type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, 
+              rotation: 0, scaleX: 1, scaleY: 1,
+              offsetX: 100, offsetY: 100,
+            };
+          } else if (file.type.startsWith('audio/')) {
+            newItem = {
+              type: 'audio', id: newId,
+              x: window.innerWidth / 2 - 100, 
+              y: window.innerHeight / 2 - 30,
+              src: data.filePath,
+              text: 'Recording Name', // Default editable text
+              width: 200, height: 60, // Default size for the audio player
+              rotation: 0, scaleX: 1, scaleY: 1,
+              offsetX: 100, offsetY: 30,
+            };
+          }
+
+          if (newItem) {
+            const newItems = [...prevItems, newItem];
+            saveToHistory(newItems);
+            return newItems;
+          }
+        }
+      })
+      .catch((err) => console.error("Error uploading image:", err));
+  };
+
+  useEffect(() => {
+    fetch(`/api/load/${scrapbookId}`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setItems(data);
+          setHistory([data]); 
+          setHistoryStep(0);
+          // Store the loaded data as the "clean" state.
+          savedStateRef.current = JSON.stringify(data);
+          if (data.length > 0) {
+            const maxId = Math.max(...data.map(item => parseInt(item.id.replace('item', '')) || 0));
+            idCounter = maxId + 1;
+          }
+        }
+      })
+      .catch(err => {
+        toast.error("Failed to load scrapbook data.");
+        const emptyState = [];
+        setItems(emptyState);
+        setHistory([emptyState]);
+        setHistoryStep(0);
+        savedStateRef.current = JSON.stringify([]); 
+        console.error("Failed to load scrapbook data:", err)
+      });
+  }, [scrapbookId]);
+
+  useEffect(() => {
+    if (selectedId && !editingItem) {
+      const shapeNode = layerRef.current.findOne('#' + selectedId);
+      trRef.current.nodes([shapeNode]);
+      trRef.current.getLayer().batchDraw();
+    } else {
+      trRef.current.nodes([]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [selectedId, editingItem]);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const activeEl = document.activeElement;
+      if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) return;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        deleteSelectedItem();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [items, selectedId]);
+
+  useEffect(() => {
+    const handlePaste = (e) => {
+      e.preventDefault();
+      const items = e.clipboardData.items;
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const file = item.getAsFile();
+          uploadFile(file);
+          break;
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -286,28 +455,6 @@ function ScrapbookPage() {
     );
   };
 
-  useEffect(() => {
-    fetch(`/api/load/${scrapbookId}`)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setItems(data);
-          // Store the loaded data as the "clean" state.
-          savedStateRef.current = JSON.stringify(data);
-          if (data.length > 0) {
-            const maxId = Math.max(...data.map(item => parseInt(item.id.replace('item', '')) || 0));
-            idCounter = maxId + 1;
-          }
-        }
-      })
-      .catch(err => {
-        toast.error("Failed to load scrapbook data.");
-        setItems([]);
-        savedStateRef.current = JSON.stringify([]); // On error, an empty canvas is the clean state.
-        console.error("Failed to load scrapbook data:", err)
-      });
-  }, [scrapbookId]);
-
   const handleEditingDone = async () => {
     if (!editingItem || !popoverRef.current) return;
 
@@ -331,11 +478,6 @@ function ScrapbookPage() {
 
     // remove contenteditable so cursor styling doesn't interfere
     clone.removeAttribute('contenteditable');
-
-    // remove trailing empty nodes
-    while (clone.lastChild && (clone.lastChild.textContent.trim() === '' || clone.lastChild.innerHTML === '<br>')) {
-      clone.removeChild(clone.lastChild);
-    }
 
     const isEmpty = !clone.textContent.trim();
 
@@ -372,6 +514,7 @@ function ScrapbookPage() {
       itemToUpdate.width = finalWidth;
       itemToUpdate.height = finalHeight;
     }
+    saveToHistory(newItems);
     setItems(newItems);
     setEditingItem(null);
     setPopoverPosition({ visible: false });
@@ -386,85 +529,9 @@ function ScrapbookPage() {
     const itemToUpdate = newItems.find(i => i.id === editingItem.id);
     if (itemToUpdate) {
       itemToUpdate.backgroundColor = newColor;
-      setItems(newItems);
+      setItems(newItems)
     }
   };
-
-  useEffect(() => {
-    if (selectedId && !editingItem) {
-      const shapeNode = layerRef.current.findOne('#' + selectedId);
-      trRef.current.nodes([shapeNode]);
-      trRef.current.getLayer().batchDraw();
-    } else {
-      trRef.current.nodes([]);
-      trRef.current.getLayer().batchDraw();
-    }
-  }, [selectedId, editingItem]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      const activeEl = document.activeElement;
-      if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) return;
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        deleteSelectedItem();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, selectedId]);
-
-  const uploadFile = (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    fetch('/api/upload', { method: 'POST', body: formData, })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.filePath) {
-          const newId = `item${idCounter++}`;
-          
-          let newItem;
-          if (file.type.startsWith('image/')) {
-            newItem = { 
-              type: 'image', x: 50, y: 50, width: 200, height: 200, src: data.filePath, id: newId, 
-              rotation: 0, scaleX: 1, scaleY: 1,
-              offsetX: 100, offsetY: 100,
-            };
-          } else if (file.type.startsWith('audio/')) {
-            newItem = {
-              type: 'audio', id: newId,
-              x: window.innerWidth / 2 - 100, 
-              y: window.innerHeight / 2 - 30,
-              src: data.filePath,
-              text: 'Recording Name', // Default editable text
-              width: 200, height: 60, // Default size for the audio player
-              rotation: 0, scaleX: 1, scaleY: 1,
-              offsetX: 100, offsetY: 30,
-            };
-          }
-
-          if (newItem) {
-            setItems((prevItems) => [...prevItems, newItem]);
-          }
-        }
-      })
-      .catch((err) => console.error("Error uploading image:", err));
-  };
-
-  useEffect(() => {
-    const handlePaste = (e) => {
-      e.preventDefault();
-      const items = e.clipboardData.items;
-      for (const item of items) {
-        if (item.type.indexOf('image') !== -1) {
-          const file = item.getAsFile();
-          uploadFile(file);
-          break;
-        }
-      }
-    };
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, []);
 
   const handleDragEnd = (e) => {
     const id = e.target.id();
@@ -514,34 +581,12 @@ function ScrapbookPage() {
 
   const deleteSelectedItem = () => {
     if (selectedId) {
-      setItems(items.filter((item) => item.id !== selectedId));
-      selectShape(null); // Deselect after deleting
-    }
-  };
-
-  const addItem = (type, position) => {
-    const newId = `item${idCounter++}`;
-    if (type === 'text') {
-      const newItem = {
-        type: 'text', x: 50, y: 50, id: newId,
-        html: '', 
-        text: 'New Text Box', // This is for the placeholder before editing
-        fill: '#000', fontSize: 24,
-        image: null, width: 200, height: 50,
-        backgroundColor: '#333333', // A default dark background
-        rotation: 0,
-        scaleX: 1,
-        scaleY: 1,
-      };
-      setItems([...items, newItem]);
-    } else if (type === 'audio') {
-      setAudioPanelPosition({
-        top: position.top + position.height / 2,
-        left: position.right + 10, // 10px to the right of the button
+      setItems((currentItems) => {
+        const newItems = currentItems.filter((item) => item.id !== selectedId);
+        saveToHistory(newItems);
+        return newItems;
       });
-      setIsAudioPanelOpen(true);
-    } else if (type === 'image') {
-      fileInputRef.current.click();
+      selectShape(null); // Deselect after deleting
     }
   };
 
@@ -563,7 +608,14 @@ function ScrapbookPage() {
   return (
     <>
       {/* <Toolbar onAddItem={addItem} onSave={handleSave} onDelete={handleDeleteScrapbook} onFileSelect={uploadFile} onRecordAudio={() => setIsAudioPanelOpen(true)} /> */}
-      <TopBar scrapbookId={scrapbookId} onBack={handleBackToHome} onSave={handleSave} onDelete={handleDeleteScrapbook} onRename={handleRename} />
+      <TopBar 
+        scrapbookId={scrapbookId} 
+        onBack={handleBackToHome} 
+        onSave={handleSave} 
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onDelete={handleDeleteScrapbook} 
+        onRename={handleRename} />
       <FloatingToolbar onAddItem={addItem} onDeleteItem={deleteSelectedItem} selectedId={selectedId} />
       <input
         type="file"
