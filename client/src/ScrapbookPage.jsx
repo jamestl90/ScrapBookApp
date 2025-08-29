@@ -180,13 +180,23 @@ function ScrapbookPage() {
     const handleKeyDown = (e) => {
       const activeEl = document.activeElement;
       if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) return;
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+      
+      if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z') || (e.ctrlKey && e.key.toLowerCase() === 'y')) {
+        e.preventDefault(); // Prevent browser's native redo
+        handleRedo();
+      } 
+      // Undo: Ctrl+Z
+      else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); // Prevent browser's native undo
+        handleUndo();
+      }
+      else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         deleteSelectedItem();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [items, selectedId]);
+  }, [selectedId, handleUndo, handleRedo]);
 
   useEffect(() => {
     const handlePaste = (e) => {
