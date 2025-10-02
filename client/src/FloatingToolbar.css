@@ -1,5 +1,5 @@
 .floating-toolbar {
-  position: absolute;
+  position: fixed;
   top: 50%;
   left: 20px;
   transform: translateY(-50%);

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FaHome, FaSave, FaEllipsisV, FaUndo, FaRedo } from 'react-icons/fa';
+import { FaHome, FaSave, FaEllipsisV, FaUndo, FaRedo, FaCrosshairs } from 'react-icons/fa';
 import './TopBar.css';
 
-const TopBar = ({ scrapbookId, onBack, onSave, onDelete, onRename, onUndo, onRedo }) => {
+const TopBar = ({ scrapbookId, onBack, onSave, onDelete, onRename, onUndo, onRedo, onCenterCanvas }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState(scrapbookId);
     const textRef = useRef(null);
@@ -69,6 +69,9 @@ const TopBar = ({ scrapbookId, onBack, onSave, onDelete, onRename, onUndo, onRed
         </button>
         <button onClick={onRedo} className="top-bar-button" title="Redo">
           <FaRedo />
+        </button>
+        <button onClick={onCenterCanvas} className="top-bar-button" title="Center Canvas">
+          <FaCrosshairs />
         </button>
         <button onClick={onSave} className="top-bar-button" title="Save Scrapbook">
           <FaSave />

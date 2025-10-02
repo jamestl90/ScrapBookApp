@@ -460,6 +460,22 @@ function ScrapbookPage() {
     });
   };
 
+  const handleCenterCanvas = () => {
+    // Get the stage instance directly from one of our refs
+    if (layerRef.current) {
+      const stage = layerRef.current.getStage();
+      
+      // Reset the scale to 100%
+      stage.scale({ x: 1, y: 1 });
+      
+      // Reset the position to the top-left corner
+      stage.position({ x: 0, y: 0 });
+      
+      // Redraw the stage to make the changes visible
+      stage.batchDraw();
+    }
+  };
+
   const handleRename = (newId) => {
     if (!newId || newId.trim() === '') {
       toast.error("Scrapbook name cannot be empty.");
@@ -649,7 +665,8 @@ function ScrapbookPage() {
         onUndo={handleUndo}
         onRedo={handleRedo}
         onDelete={handleDeleteScrapbook} 
-        onRename={handleRename} />
+        onRename={handleRename}
+        onCenterCanvas={handleCenterCanvas} />
       <FloatingToolbar onAddItem={addItem} onDeleteItem={deleteSelectedItem} selectedId={selectedId} />
       <input
         type="file"

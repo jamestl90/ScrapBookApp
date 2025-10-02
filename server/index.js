@@ -10,7 +10,9 @@ const port = process.env.PORT || 3001;
 app.use(cors()); // Enable Cross-Origin Resource Sharing
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+
+// Increase request body limit (to allow larger images to save)
+app.use(express.json({ limit: '1000mb' }));
 
 // --- Multer Storage Configuration ---
 const storage = multer.diskStorage({
@@ -178,12 +180,12 @@ app.post('/api/cleanup-uploads', (req, res) => {
   const dataPath = path.join(__dirname, 'data');
   const uploadsPath = path.join(__dirname, 'public', 'uploads');
   
-  // Grace period in milliseconds (e.g., 24 hours)
+  // Grace period in milliseconds (e.g. 24 hours)
   // Any unreferenced file older than this will be deleted.
   const GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;
   const now = Date.now();
 
-  // 1. Compile a master list of all files that are currently in use.
+  // Compile a master list of all files that are currently in use.
   const protectedFiles = new Set();
   
   try {
@@ -208,7 +210,7 @@ app.post('/api/cleanup-uploads', (req, res) => {
     return res.status(500).json({ message: 'Failed to read scrapbook data.' });
   }
 
-  // 2. Scan the uploads directory and delete orphaned files.
+  // Scan the uploads directory and delete orphaned files.
   try {
     const uploadedFiles = fs.readdirSync(uploadsPath);
     let deletedCount = 0;
