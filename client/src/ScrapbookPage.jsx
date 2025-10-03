@@ -8,6 +8,7 @@ import FloatingToolbar from './FloatingToolbar';
 import TopBar from './TopBar';
 import CanvasImage from './CanvasImage';
 import RichTextEditor from './RichTextEditor';
+import './RichTextEditor.css';
 import AudioRecorder from './AudioRecorder';
 import AudioPlayer from './AudioPlayer';
 
@@ -20,7 +21,6 @@ function ScrapbookPage() {
   const [items, setItems] = useState([]);
   const [selectedId, selectShape] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
-  const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0, visible: false });
   const [isAudioPanelOpen, setIsAudioPanelOpen] = useState(false);
   const [audioPanelPosition, setAudioPanelPosition] = useState({ top: 0, left: 0 });
   const [history, setHistory] = useState([[]]); 
@@ -508,54 +508,46 @@ function ScrapbookPage() {
   const handleEditingDone = async () => {
     if (!editingItem || !popoverRef.current) return;
 
+    // 1. Target ONLY the ProseMirror content area.
     const editorNode = popoverRef.current.querySelector('.ProseMirror');
     if (!editorNode) return;
 
     const bgColor = editingItem.backgroundColor === 'transparent' ? null : editingItem.backgroundColor;
 
-    const renderContainer = document.createElement('div');
-    renderContainer.style.position = 'absolute';
-    renderContainer.style.left = '-9999px';
-    renderContainer.style.top = '-9999px';
-    renderContainer.style.padding = '4px';
-    renderContainer.style.padding = '0';
-    renderContainer.style.margin = '0';
-    renderContainer.style.display = 'inline-block';
-    renderContainer.style.background = bgColor || 'transparent';
+    // 2. Create a deep clone of JUST the content.
+    const renderClone = editorNode.cloneNode(true);
 
-    // clone editor content
-    const clone = editorNode.cloneNode(true);
+    // 3. Style the clone to be invisible, off-screen, and un-constrained.
+    renderClone.style.position = 'absolute';
+    renderClone.style.left = '-9999px';
+    renderClone.style.top = '-9999px';
+    renderClone.style.zIndex = '-1';
+    
+    // THIS IS THE KEY: Remove the constraints that cause scrolling, allowing
+    // the clone to expand to its full, natural height.
+    renderClone.style.maxHeight = 'none';
+    renderClone.style.overflow = 'visible';
+    
+    // We also need to add back the padding that was on the original ProseMirror element
+    // so it's included in the final image.
+    renderClone.style.padding = '8px';
 
-    // remove contenteditable so cursor styling doesn't interfere
-    clone.removeAttribute('contenteditable');
+    // 4. Append the modified, unconstrained clone to the body.
+    document.body.appendChild(renderClone);
 
-    const isEmpty = !clone.textContent.trim();
-
-    if (isEmpty) {
-      // force a minimum size for empty text
-      renderContainer.style.width = '100px';   // or any minimum width
-      renderContainer.style.height = '30px';   // or any minimum height
-      clone.textContent = '\u200B';
-    }
-
-    // remove paragraph/heading margins to collapse vertical space
-    clone.querySelectorAll('p, h1, h2, h3, h4, h5, h6').forEach(el => {
-      el.style.margin = '0';
-    });
-
-    renderContainer.appendChild(clone);
-    document.body.appendChild(renderContainer);
-
-    const canvas = await html2canvas(renderContainer, {
+    // 5. Render the clone. html2canvas will now see all the content, but not the toolbar.
+    const canvas = await html2canvas(renderClone, {
       backgroundColor: bgColor,
-      scale: 2,
     });
+    
     const dataUrl = canvas.toDataURL('image/png');
 
-    const finalWidth = renderContainer.offsetWidth;
-    const finalHeight = renderContainer.offsetHeight;
-    document.body.removeChild(renderContainer);
+    const finalWidth = renderClone.offsetWidth;
+    const finalHeight = renderClone.offsetHeight;
 
+    document.body.removeChild(renderClone);
+
+    // --- Update State ---
     const newItems = items.slice();
     const itemToUpdate = newItems.find(i => i.id === editingItem.id);
     if (itemToUpdate) {
@@ -567,7 +559,6 @@ function ScrapbookPage() {
     saveToHistory(newItems);
     setItems(newItems);
     setEditingItem(null);
-    setPopoverPosition({ visible: false });
   };
 
   const handleBgChange = (newColor) => {
@@ -651,7 +642,6 @@ function ScrapbookPage() {
         handleStopRecording(false); 
       }
       setEditingItem(null);
-      setPopoverPosition({ visible: false }); // Hide popover
     }
   };
 
@@ -675,14 +665,20 @@ function ScrapbookPage() {
         style={{ display: 'none' }}
         accept="image/*" 
       />
-      {popoverPosition.visible && (
-        <div ref={popoverRef} style={{ position: 'absolute', top: popoverPosition.top, left: popoverPosition.left, zIndex: 100 }} >
-          <RichTextEditor
-            content={editingItem.html}
-            onUpdate={handleTextUpdate}
-            bgColor={editingItem.backgroundColor}
-            onBgChange={handleBgChange}
-          />
+      {editingItem && (
+        <div className="editor-backdrop" onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            handleEditingDone();
+          }
+        }}>
+          <div className="editor-popover-content" ref={popoverRef}>
+            <RichTextEditor
+              content={editingItem.html}
+              onUpdate={handleTextUpdate}
+              bgColor={editingItem.backgroundColor}
+              onBgChange={handleBgChange}
+            />
+          </div>
         </div>
       )}
       {isAudioPanelOpen && (
@@ -737,16 +733,6 @@ function ScrapbookPage() {
                     onClick={() => selectShape(item.id)}
                     onTap={() => selectShape(item.id)}
                     onDblClick={(e) => { 
-                      const node = e.currentTarget;
-                      const stage = node.getStage();
-                      const stageBox = stage.container().getBoundingClientRect();
-                      const nodeBox = node.getClientRect({ relativeTo: stage });
-
-                      setPopoverPosition({
-                        visible: true,
-                        left: stageBox.left + nodeBox.x,
-                        top: stageBox.top + nodeBox.y + nodeBox.height + 5,
-                      });
                       setEditingItem(item);
                       selectShape(null); 
                     }}
@@ -760,16 +746,6 @@ function ScrapbookPage() {
                   draggable onDragEnd={handleDragEnd}
                   onClick={() => selectShape(item.id)} onTap={() => selectShape(item.id)}
                   onDblClick={(e) => {
-                    const node = e.currentTarget;
-                    const stage = node.getStage();
-                    const stageBox = stage.container().getBoundingClientRect();
-                    const nodeBox = node.getClientRect({ relativeTo: stage });
-
-                    setPopoverPosition({
-                      visible: true,
-                      left: stageBox.left + nodeBox.x,
-                      top: stageBox.top + nodeBox.y + nodeBox.height + 5, // Position below the text
-                    });
                     setEditingItem(item);
                     selectShape(null);
                   }}
