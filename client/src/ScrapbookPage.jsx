@@ -43,7 +43,7 @@ function ScrapbookPage() {
       const newItem = {
         type: 'text', x: 50, y: 50, id: newId,
         html: '', 
-        text: 'New Text Box', // This is for the placeholder before editing
+        text: 'Double click to edit', // This is for the placeholder before editing
         fill: '#000', fontSize: 24,
         image: null, width: 200, height: 50,
         backgroundColor: '#333333', // A default dark background
@@ -508,22 +508,21 @@ function ScrapbookPage() {
   const handleEditingDone = async () => {
     if (!editingItem || !popoverRef.current) return;
 
-    // 1. Target ONLY the ProseMirror content area.
+    // Target ONLY the ProseMirror content area.
     const editorNode = popoverRef.current.querySelector('.ProseMirror');
     if (!editorNode) return;
 
     const bgColor = editingItem.backgroundColor === 'transparent' ? null : editingItem.backgroundColor;
 
-    // 2. Create a deep clone of JUST the content.
+    // Create a deep clone of JUST the content.
     const renderClone = editorNode.cloneNode(true);
 
-    // 3. Style the clone to be invisible, off-screen, and un-constrained.
+    // Style the clone to be invisible, off-screen, and un-constrained.
     renderClone.style.position = 'absolute';
     renderClone.style.left = '-9999px';
     renderClone.style.top = '-9999px';
     renderClone.style.zIndex = '-1';
     
-    // THIS IS THE KEY: Remove the constraints that cause scrolling, allowing
     // the clone to expand to its full, natural height.
     renderClone.style.maxHeight = 'none';
     renderClone.style.overflow = 'visible';
@@ -532,10 +531,17 @@ function ScrapbookPage() {
     // so it's included in the final image.
     renderClone.style.padding = '8px';
 
-    // 4. Append the modified, unconstrained clone to the body.
+    const isEmpty = !renderClone.textContent.trim();
+    if (isEmpty) {
+      renderClone.innerHTML = '\u200B'; // Zero-width space
+      renderClone.style.width = '100px';
+      renderClone.style.height = '30px';
+    }
+
+    // Append the modified, unconstrained clone to the body.
     document.body.appendChild(renderClone);
 
-    // 5. Render the clone. html2canvas will now see all the content, but not the toolbar.
+    // Render the clone. html2canvas will now see all the content, but not the toolbar.
     const canvas = await html2canvas(renderClone, {
       backgroundColor: bgColor,
     });
