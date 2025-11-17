@@ -14,15 +14,15 @@ The application is built with a modern JavaScript stack, featuring a decoupled f
 
 The client is a responsive single-page application built for a seamless user experience.
 
-React: JavaScript library for building component-based user interfaces.
+React: Javascript. Well established front-end ecosystem.
 
-Vite: Frontend build tool that provides a significantly faster and leaner development experience.
+Vite: Minimal config dev server.
 
-React Router (react-router-dom): Handles client-side routing, enabling navigation between the home screen and different scrapbook canvases.
+React Router (react-router-dom): Handles client-side routing.
 
-Konva & react-konva: A high-performance 2D canvas library for creating complex and interactive graphical elements. react-konva provides the necessary bindings to integrate Konva with React's declarative style.
+Konva & react-konva: 2D canvas library which suits the requirements for this project - fast node editing, graphical manipulations.
 
-Tiptap: A headless, framework-agnostic rich-text editor toolkit. It powers the text editing functionality, allowing full control over the editor's appearance and behavior.
+Tiptap: Rich text editor toolkit.
 
 html2canvas: A utility that renders DOM elements into canvas images, used here to convert styled rich text into a static image asset for the Konva canvas.
 
@@ -32,7 +32,7 @@ The server is a lightweight and efficient Node.js application designed to handle
 
 Node.js: A JavaScript runtime used to build fast and scalable server-side applications.
 
-Express: A minimal and flexible web application framework for Node.js, used to build the application's RESTful API.
+Express: Web app framework for building REST api. Standard for server-side abstractions. 
 
 cors: Middleware to enable Cross-Origin Resource Sharing, allowing the frontend application to securely communicate with the backend API.
 
@@ -40,7 +40,7 @@ multer: A Node.js middleware for handling multipart/form-data, which is essentia
 
 nodemon: A development utility that automatically restarts the server upon detecting file changes, streamlining the development process.
 
-dotenv: Manages environment variables, keeping sensitive configuration (like API keys or database strings) separate from the source code.
+dotenv: Manages environment variables, keeping sensitive configuration (API keys or database strings) separate from the source code.
 
 ## Core Features
 ## Home Screen & Workbook Management
