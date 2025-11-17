@@ -6,7 +6,7 @@ Taskboard for this app: https://trello.com/b/yqbvpTog/scrapbookapp
 
 ScrapBook is a dynamic and interactive note-taking application that utilizes a canvas-based interface. It allows users to visually organize their thoughts by adding and manipulating rich text, images, and audio recordings in a freeform workspace.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 The application is built with a modern JavaScript stack, featuring a decoupled frontend and backend for a scalable and maintainable architecture.
 
@@ -42,7 +42,7 @@ nodemon: A development utility that automatically restarts the server upon detec
 
 dotenv: Manages environment variables, keeping sensitive configuration (like API keys or database strings) separate from the source code.
 
-## ✨ Core Features
+## Core Features
 ## Home Screen & Workbook Management
 
 The application opens to a central home screen that displays a gallery of previously saved workbooks. From here, users can either select an existing project to continue their work or start a new, blank scrapbook canvas.
