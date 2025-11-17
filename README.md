@@ -1,3 +1,5 @@
+Disclaimer: This app was largely an exercise in using AI to accelerate development. I used Google AI Studio to assist in generating code for many functions in this project. Unit tests would be required to properly verify the correctness of the generated code as it would my own written code. 
+
 Taskboard for this app: https://trello.com/b/yqbvpTog/scrapbookapp
 
 # ScrapBook Note-Taking App
@@ -12,9 +14,9 @@ The application is built with a modern JavaScript stack, featuring a decoupled f
 
 The client is a responsive single-page application built for a seamless user experience.
 
-React: A declarative JavaScript library for building component-based user interfaces.
+React: JavaScript library for building component-based user interfaces.
 
-Vite: A next-generation frontend build tool that provides a significantly faster and leaner development experience.
+Vite: Frontend build tool that provides a significantly faster and leaner development experience.
 
 React Router (react-router-dom): Handles client-side routing, enabling navigation between the home screen and different scrapbook canvases.
 
