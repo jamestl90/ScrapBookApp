@@ -54,7 +54,8 @@ app.post('/api/save/:id', (req, res) => {
   const filePath = path.join(__dirname, 'data', `${safeId}.json`);
 
   const jsonString = JSON.stringify(data, null, 2);
-  
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
   fs.writeFile(filePath, jsonString, (err) => {
     if (err) {
       console.error('Error saving data:', err);
