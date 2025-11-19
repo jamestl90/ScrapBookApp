@@ -4,7 +4,7 @@ Disclaimer: This app was largely an exercise in using AI to accelerate developme
 Hosted by render.com, might take a moment to spin up if it's been inactive for awhile. </br>
 Play around with the app here: </br>
 https://scrapbookapp-6xn8.onrender.com/
-
+</br>
 Taskboard for this app: https://trello.com/b/yqbvpTog/scrapbookapp
 
 # ScrapBook Note-Taking App
