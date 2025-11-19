@@ -118,7 +118,7 @@ const RichTextEditor = ({ content, onUpdate, onBgChange, bgColor }) => {
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      onUpdate(editor.getHTML());
+      onUpdate(html); // Pass the original HTML for now
     },
   });
 

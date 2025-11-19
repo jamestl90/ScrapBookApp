@@ -51,19 +51,18 @@
   flex-grow: 1; 
 }
 
-.ProseMirror p.is-editor-empty:last-child {
-  margin: 0;
-}
-
-/* This ensures all content inside the editor defaults to left-aligned */
 .ProseMirror p,
 .ProseMirror h1,
 .ProseMirror h2,
-.ProseMirror h3 {
+.ProseMirror h3,
+.ProseMirror ul,
+.ProseMirror ol {
+  margin-top: 0;
+  margin-bottom: 0;
   text-align: left;
 }
 
-/* Style for the placeholder text */
+/* 2. Placeholder: Style the "Start writing..." text. This is correct. */
 .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -71,7 +70,6 @@
   pointer-events: none;
   height: 0;
 }
-
 /* This is the backdrop that will cover the page */
 .editor-backdrop {
   position: fixed;

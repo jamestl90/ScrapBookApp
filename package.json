@@ -6,7 +6,9 @@
   "scripts": {
     "client": "npm run dev --prefix client",
     "server": "npm start --prefix server",
-    "dev": "concurrently \"npm run client\" \"npm run server\""
+    "dev": "concurrently \"npm run client\" \"npm run server\"",
+    "build-client": "cd client && vite build",
+    "start": "node server/index.js"
   },
   "keywords": [],
   "author": "",
