@@ -1,6 +1,7 @@
 Disclaimer: This app was largely an exercise in using AI to accelerate development. I used Google AI Studio to assist in generating code for many functions in this project. Unit tests would be required to properly verify the correctness of the generated code as it would my own written code. 
 
 <h2>Live Demo</h2>
+Hosted by render.com, might take a moment to spin up if it's been inactive for awhile. </br>
 Play around with the app here: </br>
 https://scrapbookapp-6xn8.onrender.com/
 
