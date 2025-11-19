@@ -15,6 +15,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json({ limit: '1000mb' }));
 
 // --- Multer Storage Configuration ---
+const uploadsDir = path.join(__dirname, 'public', 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'public/uploads/'); // Save files to the 'public/uploads' directory
