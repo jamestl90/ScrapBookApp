@@ -7,7 +7,7 @@
     "client": "npm run dev --prefix client",
     "server": "npm start --prefix server",
     "dev": "concurrently \"npm run client\" \"npm run server\"",
-    "build-client": "cd client && vite build",
+    "build-client": "cd client && npm install && npm run build",
     "start": "node server/index.js"
   },
   "keywords": [],
