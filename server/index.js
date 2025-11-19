@@ -243,7 +243,7 @@ app.post('/api/cleanup-uploads', (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../client/dist')));
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
+  if (!req.url.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../client/dist/index.html'));
   }
 });
