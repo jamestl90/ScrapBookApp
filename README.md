@@ -92,5 +92,6 @@ File Storage: All uploaded media assets, including images and audio files, are s
 1. Free hand drawing
 
 ## Screenshot
+Screenshot showing some text, screen snip of code, screen snip of blender and an audio recording
 
 ![ScrapBook app screenshot](screenshots/Screenshot%202026-08-15%20162238.png)
