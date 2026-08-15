@@ -90,3 +90,7 @@ File Storage: All uploaded media assets, including images and audio files, are s
 ## Future Developments
 
 1. Free hand drawing
+
+## Screenshot
+
+![ScrapBook app screenshot](screenshots/Screenshot%202026-08-15%20162238.png)

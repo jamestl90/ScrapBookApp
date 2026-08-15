@@ -459,12 +459,12 @@ function ScrapbookPage() {
     fetch(`/api/delete/${scrapbookId}`, {
       method: 'DELETE',
     })
-    .then(response => {
-      // Check if the request was successful
+    .then(async response => {
+      const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(data.message || 'Could not delete scrapbook.');
       }
-      return response.json();
+      return data;
     })
     .then(data => {
       toast.success('Scrapbook deleted!');
@@ -472,7 +472,7 @@ function ScrapbookPage() {
       navigate('/'); // Redirect to the home page
     })
     .catch((error) => {
-      toast.error('Could not delete scrapbook.');
+      toast.error(error.message || 'Could not delete scrapbook.');
       console.error('Error:', error);
     });
   };

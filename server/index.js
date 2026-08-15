@@ -114,11 +114,9 @@ app.delete('/api/delete/:id', (req, res) => {
   // fs.unlink is the Node.js function to delete a file
   fs.unlink(filePath, (err) => {
     if (err) {
-      // If the file doesn't exist, it's not an error in this case.
-      // The goal is for the file to be gone, and it already is.
       if (err.code === 'ENOENT') {
         console.log(`Attempted to delete scrapbook [${safeId}], but it was not found.`);
-        return res.status(200).json({ message: 'Scrapbook not found, but considered deleted.' });
+        return res.status(404).json({ message: 'Scrapbook to delete not found.' });
       }
       // For any other errors (e.g., permissions), send a server error.
       console.error('Error deleting data:', err);
