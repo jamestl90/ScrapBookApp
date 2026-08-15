@@ -5,6 +5,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import Placeholder from '@tiptap/extension-placeholder';
+import Underline from '@tiptap/extension-underline';
 import './RichTextEditor.css'; 
 import { 
   FaBold, FaItalic, FaAlignLeft, FaAlignCenter, FaAlignRight, FaUnderline, FaStrikethrough
@@ -107,6 +108,7 @@ const RichTextEditor = ({ content, onUpdate, onBgChange, bgColor }) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),
@@ -116,9 +118,9 @@ const RichTextEditor = ({ content, onUpdate, onBgChange, bgColor }) => {
         placeholder: 'Start writing...',
       }),
     ],
-    content: content,
+    content: content || '<p></p>',
     onUpdate: ({ editor }) => {
-      onUpdate(html); // Pass the original HTML for now
+      onUpdate(editor.getHTML());
     },
   });
 

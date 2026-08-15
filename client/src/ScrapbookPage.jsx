@@ -14,6 +14,23 @@ import AudioPlayer from './AudioPlayer';
 
 let idCounter = 2;
 
+const escapeHtml = (value) => (
+  value.replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[char]))
+);
+
+const getEditorContent = (item) => {
+  if (!item) return '<p></p>';
+  if (item.html && item.html.trim()) return item.html;
+  if (item.text && item.text.trim()) return `<p>${escapeHtml(item.text)}</p>`;
+  return '<p></p>';
+};
+
 function ScrapbookPage() {
 
   const navigate = useNavigate();
@@ -679,7 +696,7 @@ function ScrapbookPage() {
         }}>
           <div className="editor-popover-content" ref={popoverRef}>
             <RichTextEditor
-              content={editingItem.html}
+              content={getEditorContent(editingItem)}
               onUpdate={handleTextUpdate}
               bgColor={editingItem.backgroundColor}
               onBgChange={handleBgChange}
